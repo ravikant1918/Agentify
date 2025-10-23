@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  fast-agent-poc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Proxy settings - can be overridden via environment variables
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1}
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Proxy settings for runtime
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
+      - http_proxy=${HTTP_PROXY:-}
+      - https_proxy=${HTTPS_PROXY:-}
+      - no_proxy=${NO_PROXY:-localhost,127.0.0.1}
+      - PORT=${PORT:-8000}
+      
+      # Application environment variables
+      - MODEL=${MODEL:-gpt-35-turbo}
+      - AZURE_API_VERSION=${AZURE_API_VERSION:-2023-05-15}
+      - AZURE_ENDPOINT=${AZURE_ENDPOINT:-https://your-endpoint.openai.azure.com/}
+      - LLM_API_KEY=${LLM_API_KEY:-your-azure-api-key}
+      - BASE_URL=${BASE_URL}
+      - MCP_URL=${MCP_URL}
+      - REDIS_URL=${REDIS_URL:-redis://localhost:6379/0}
+    volumes:
+      - ./templates:/app/templates
+      - ./static:/app/static
+    restart: unless-stopped
+    network_mode: host  # Use host networking to access local Redis
