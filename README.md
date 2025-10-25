@@ -1,4 +1,13 @@
-# 🤖 Agentify  
+# 🤖 Agen## 🧠 Overview
+**Agentify** is an open-source web application that lets you instantly create a functional AI chat assistant using your own **MCP tools**, **LLM provider**, and custom **system prompt**. It combines a modern web interface with powerful backend capabilities including LangChain ReAct agents for advanced reasoning.
+
+With **zero coding**, developers can configure their preferred:
+- 🛠️ MCP tools and endpoints
+- 🤖 LLM provider (OpenAI, Azure, Anthropic, Groq, etc.)
+- 💭 System instructions and behavior
+- 🎨 Web interface customization
+
+> 💡 *Think of it as your personal AI assistant builder — just configure your tools and models, then start chatting!*
 **Turn config into a working agent.**
 
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -17,27 +26,62 @@ With **zero coding**, developers can simply clone the repo, fill in their config
 ---
 
 ## ⚙️ Features
-- 🔌 **Plug-and-play setup** — configure once, run anywhere  
-- 🧠 **MCP + LLM ready** — works with any compatible model or endpoint  
-- ⚡ **Lightweight & flexible** — extend, customize, or integrate easily  
-- 🧩 **Developer-friendly** — simple `.env` configuration  
-- 🌍 **Open-source & free to use**
+- 🌐 **Modern Web Interface** — Clean, responsive chat UI with real-time updates
+- 🔌 **MCP Integration** — Connect to any MCP-compatible tool server
+- 🧠 **Multi-LLM Support** — Works with OpenAI, Azure, Anthropic, Groq, and custom endpoints
+- ⚡ **LangChain ReAct** — Advanced reasoning and autonomous tool usage
+- 💾 **Session Management** — Persistent chat history and context
+- 🛠️ **Docker Ready** — Easy deployment with Docker Compose
+- 🔧 **Customizable** — Simple configuration via UI or `.env`
+- 🎨 **Themeable UI** — Clean, modern design with customizable styles
+- 📱 **Responsive Design** — Works on desktop and mobile devices
+- 🌍 **Open Source** — MIT licensed and free to use
 
 ---
 
 ## 📦 Project Structure
 ```
-agentify/
-├── agentify/
+.
+├── app.py                     # FastAPI web application entry point
+├── deploy.sh                  # Deployment automation script
+├── docker-compose.yml         # Docker container orchestration
+├── Dockerfile                 # Docker image configuration
+├── langchain_react_agent.py   # LangChain ReAct agent implementation
+├── main.py                    # Main MCP client application
+├── requirement.txt            # Project dependencies
+├── run_agent.py              # Agent execution script
+├── src/                      # Core source code
 │   ├── __init__.py
-│   ├── core.py
-│   ├── config_loader.py
-│   └── agent_runner.py
-├── examples/
-│   └── quickstart.py
-├── .env.example
-├── requirements.txt
-└── README.md
+│   ├── agent.py             # Agent implementation
+│   ├── config_manager.py    # Secure configuration management
+│   ├── llm_factory.py       # LLM provider configuration
+│   ├── mcp_client.py        # MCP integration client
+│   └── session_manager.py   # Session management
+├── static/                   # Static web assets
+│   └── styles.css           # UI styling
+└── templates/               # HTML templates
+    ├── config.html         # Configuration management UI
+    └── index.html         # Main chat interface
+```
+.
+├── app.py                     # FastAPI web application entry point
+├── deploy.sh                  # Deployment automation script
+├── docker-compose.yml         # Docker container orchestration
+├── Dockerfile                 # Docker image configuration
+├── langchain_react_agent.py   # LangChain ReAct agent implementation
+├── main.py                    # Main MCP client application
+├── requirement.txt            # Project dependencies
+├── run_agent.py              # Agent execution script
+├── src/                      # Core source code
+│   ├── __init__.py
+│   ├── agent.py             # Agent implementation
+│   ├── llm_factory.py       # LLM provider configuration
+│   ├── mcp_client.py        # MCP integration client
+│   └── session_manager.py   # Session management
+├── static/                   # Static web assets
+│   └── styles.css           # UI styling
+└── templates/               # HTML templates
+    └── index.html          # Main chat interface
 ```
 
 ---
@@ -90,14 +134,94 @@ print(response)
 
 ---
 
-## 🔧 Configuration Options
+## 🔧 Configuration Management
 
-| Variable | Description | Example |
-|-----------|-------------|----------|
-| `MCP_URL` | Your MCP service endpoint | `https://your-mcp-url.com` |
-| `SYSTEM_PROMPT` | Defines how your agent behaves | `"You are a helpful AI assistant"` |
-| `LLM_API_KEY` | API key for your model provider | `sk-abc123` |
-| `MODEL_NAME` | The LLM to use | `gpt-4o`, `claude-3`, etc. |
+### Web Interface
+Agentify now includes a comprehensive configuration management UI accessible at `/config`. Here you can:
+
+- 🔄 **Manage Multiple MCP Servers**
+  - Add, edit, and remove MCP server configurations
+  - Set server URLs, authentication, and custom settings
+  - Switch between different MCP servers in real-time
+
+- 🔑 **LLM Settings**
+  - Configure multiple LLM providers (OpenAI, Azure, etc.)
+  - Securely store API keys and endpoints
+  - Set model preferences and parameters
+
+- 💾 **Persistent Storage**
+  - All configurations are securely stored in Redis
+  - Sensitive data is encrypted at rest
+  - Easy backup and restore functionality
+
+### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `REDIS_URL` | Redis connection URL for config storage | `redis://localhost:6379` | Yes |
+| `ENCRYPTION_KEY` | Key for securing sensitive data | - | Yes |
+| `DEFAULT_MCP_URL` | Default MCP server URL | `http://localhost:8000` | No |
+| `DEFAULT_LLM_PROVIDER` | Default LLM provider | `azure` | No |
+| `LLM_API_KEY` | Default API key for LLM | - | Yes |
+| `AZURE_ENDPOINT` | Azure OpenAI endpoint (if using Azure) | - | No |
+| `MODEL_NAME` | Default model to use | `gpt-4` | No |
+
+### Redis Setup
+
+1. Install Redis:
+   ```bash
+   # macOS with Homebrew
+   brew install redis
+   brew services start redis
+
+   # Ubuntu/Debian
+   sudo apt-get install redis-server
+   sudo systemctl start redis-server
+   ```
+
+2. Set the encryption key:
+   ```bash
+   export ENCRYPTION_KEY=$(openssl rand -hex 32)
+   ```
+
+3. Verify Redis connection:
+   ```bash
+   redis-cli ping
+   ```
+
+### Configuration API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/mcp/servers` | GET | List all MCP servers |
+| `/api/mcp/servers` | POST | Add new MCP server |
+| `/api/mcp/servers/{id}` | DELETE | Remove MCP server |
+| `/api/mcp/servers/{id}` | PATCH | Update MCP server |
+| `/api/llm/config` | POST | Update LLM settings |
+
+### Configuration File Example
+```json
+{
+  "mcp_servers": [
+    {
+      "id": "dev-server",
+      "url": "http://localhost:8000",
+      "auth_type": "none"
+    },
+    {
+      "id": "prod-server",
+      "url": "https://mcp.example.com",
+      "auth_type": "bearer",
+      "auth_token": "xxx"
+    }
+  ],
+  "llm_config": {
+    "provider": "azure",
+    "model": "gpt-4",
+    "api_version": "2024-12-01-preview",
+    "azure_endpoint": "https://your-endpoint.openai.azure.com"
+  }
+}
 
 ---
 

@@ -1,0 +1,41 @@
+{
+    "mcpServers": {
+        "kite": {
+            "name": "Kite Trading",
+            "type": "remote",
+            "command": "npx",
+            "args": ["mcp-remote", "https://mcp.kite.trade/mcp"],
+            "description": "Zerodha Kite trading platform MCP",
+            "authType": "api_key",
+            "headers": {
+                "X-Kite-API-Key": ""
+            }
+        },
+        "claude": {
+            "name": "Claude AI",
+            "type": "direct",
+            "url": "https://claude.ai/mcp",
+            "description": "Anthropic Claude AI assistant",
+            "authType": "bearer",
+            "headers": {
+                "Authorization": "Bearer YOUR_TOKEN"
+            }
+        },
+        "copilot": {
+            "name": "GitHub Copilot",
+            "type": "direct",
+            "url": "vscode://github.copilot/mcp",
+            "description": "GitHub Copilot coding assistant",
+            "authType": "vscode",
+            "headers": {}
+        },
+        "custom": {
+            "name": "Custom MCP",
+            "type": "direct",
+            "url": "http://localhost:3002/mcp",
+            "description": "Local or custom MCP server",
+            "authType": "none",
+            "headers": {}
+        }
+    }
+}

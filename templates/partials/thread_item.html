@@ -1,0 +1,43 @@
+{% for thread in threads %}
+<div class="thread-item p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+     hx-get="/?thread_id={{ thread.id }}"
+     hx-push-url="true">
+    <div class="flex items-start gap-3">
+        <!-- Thread icon -->
+        <div class="p-2 rounded-full bg-primary/10 text-primary">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+            </svg>
+        </div>
+
+        <!-- Thread content -->
+        <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">
+                {{ thread.title or "New Chat" }}
+            </h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                {{ thread.last_message or "" }}
+            </p>
+            <div class="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                <span>{{ thread.message_count }} messages</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- New Thread Button -->
+<div class="mt-4">
+    <button class="w-full btn btn-outline btn-sm"
+            hx-post="/api/threads"
+            hx-vals='{"title": "New Chat"}'
+            hx-target="#thread-list"
+            hx-swap="innerHTML"
+            hx-on:htmx:after-request="document.querySelector('.thread-item').click()">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        New Chat
+    </button>
+</div>

@@ -1,1946 +1,247 @@
-<!DOCTYPE html><!DOCTYPE html><!DOCTYPE html>
+{% extends "base.html" %}
 
-<html lang="en">
+{% block title %}Agentify - Chat{% endblock %}
 
-<head><html lang="en"><html lang="en">
+{% block content %}
+<div class="flex flex-col h-screen pt-4">
+    <!-- Chat Container -->
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
 
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"><head><head>
-
-    <title>AI Chat Agent</title>
-
-    <link rel="stylesheet" href="/static/styles.css">    <meta charset="UTF-8">    <meta charset="UTF-8">
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-</head>
-
-<body>    <title>AI Chat Agent</title>    <title>MCP Chat Agent</title>
-
-    <div class="app-container">
-
-        <!-- Sidebar -->    <link rel="stylesheet" href="/static/styles.css">    <link rel="stylesheet" href="/static/styles.css">
-
-        <div class="sidebar" id="sidebar">
-
-            <div class="sidebar-header">    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-
-                <div class="sidebar-title">
-
-                    <i class="fas fa-comments"></i>    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"></head>
-
-                    <span>AI Chat</span>
-
-                </div></head><body>
-
-                <button class="new-chat-btn" onclick="createNewThread()">
-
-                    <i class="fas fa-plus"></i><body>    <div class="app-container">
-
-                    <span>New Chat</span>
-
-                </button>    <div class="app-container">        <!-- Sidebar -->
-
-            </div>
-
-                    <!-- Sidebar -->        <div class="sidebar" id="sidebar">
-
-            <div class="chat-history" id="chatHistory">
-
-                <!-- Chat threads will be loaded here -->        <div class="sidebar" id="sidebar">            <div class="sidebar-header">
-
-            </div>
-
-                        <div class="sidebar-header">                <button class="new-chat-btn" onclick="createNewChat()">
-
-            <div class="sidebar-footer">
-
-                <button class="settings-btn" onclick="openSettings()">                <div class="sidebar-title">                    <i class="fas fa-plus"></i>
-
-                    <i class="fas fa-cog"></i>
-
-                    <span>Settings</span>                    <i class="fas fa-comments"></i>                    New chat
-
-                </button>
-
-            </div>                    <span>AI Chat</span>                </button>
-
-        </div>
-
-                </div>            </div>
-
-        <!-- Main Chat Area -->
-
-        <div class="main-chat">                <button class="new-chat-btn" onclick="createNewThread()">            
-
-            <div class="chat-header">
-
-                <button class="mobile-menu-btn" onclick="toggleSidebar()">                    <i class="fas fa-plus"></i>            <div class="chat-history" id="chatHistory">
-
-                    <i class="fas fa-bars"></i>
-
-                </button>                    <span>New Chat</span>                <!-- Chat threads will be populated here -->
-
-                <div class="chat-title" id="chatTitle">AI Assistant</div>
-
-                <div class="connection-status" id="connectionStatus">                </button>            </div>
-
-                    <i class="fas fa-circle status-indicator"></i>
-
-                    <span id="statusText">Connecting...</span>            </div>            
-
+        <!-- Thread Header -->
+        <div class="border-b border-gray-200 dark:border-gray-700 p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        {% if thread_id %}
+                            {{ current_thread.title if current_thread else "New Chat" }}
+                        {% else %}
+                            New Chat
+                        {% endif %}
+                    </h2>
+                    {% if thread_id %}
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        {{ messages|length }} messages
+                    </p>
+                    {% endif %}
                 </div>
-
-            </div>                        <div class="sidebar-footer">
-
-            
-
-            <div class="chat-messages" id="chatMessages">            <div class="chat-history" id="chatHistory">                <button class="config-btn" onclick="openConfig()">
-
-                <div class="welcome-message">
-
-                    <div class="welcome-content">                <!-- Chat threads will be loaded here -->                    <i class="fas fa-cog"></i>
-
-                        <div class="welcome-icon">
-
-                            <i class="fas fa-robot"></i>            </div>                    Settings
-
-                        </div>
-
-                        <h2>Welcome to AI Chat Agent</h2>                            </button>
-
-                        <p>I'm your AI assistant powered by advanced language models and DataHub tools. How can I help you today?</p>
-
-                        <div class="suggested-prompts">            <div class="sidebar-footer">            </div>
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('What DataHub tools are available?')">
-
-                                <i class="fas fa-tools"></i>                <button class="settings-btn" onclick="openSettings()">        </div>
-
-                                <span>What DataHub tools are available?</span>
-
-                            </div>                    <i class="fas fa-cog"></i>
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Search for datasets in the catalog')">
-
-                                <i class="fas fa-search"></i>                    <span>Settings</span>        <!-- Main Chat Area -->
-
-                                <span>Search for datasets in the catalog</span>
-
-                            </div>                </button>        <div class="main-content">
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Help me understand data lineage')">
-
-                                <i class="fas fa-project-diagram"></i>            </div>            <!-- Header -->
-
-                                <span>Help me understand data lineage</span>
-
-                            </div>        </div>            <div class="chat-header">
-
-                        </div>
-
-                    </div>                <button class="sidebar-toggle" onclick="toggleSidebar()">
-
-                </div>
-
-            </div>        <!-- Main Chat Area -->                    <i class="fas fa-bars"></i>
-
-            
-
-            <div class="typing-indicator" id="typingIndicator" style="display: none;">        <div class="main-chat">                </button>
-
-                <div class="typing-dots">
-
-                    <span></span>            <div class="chat-header">                <h1>MCP Chat Agent</h1>
-
-                    <span></span>
-
-                    <span></span>                <button class="mobile-menu-btn" onclick="toggleSidebar()">                <div class="status-indicator">
-
-                </div>
-
-                <span>AI is thinking...</span>                    <i class="fas fa-bars"></i>                    <span class="status-dot" id="statusDot"></span>
-
-            </div>
-
-                            </button>                    <span id="statusText">Connected</span>
-
-            <div class="chat-input-container">
-
-                <div class="chat-input-wrapper">                <div class="chat-title" id="chatTitle">AI Assistant</div>                </div>
-
-                    <textarea 
-
-                        id="messageInput"                 <div class="connection-status" id="connectionStatus">            </div>
-
-                        placeholder="Type your message here..." 
-
-                        rows="1"                    <i class="fas fa-circle status-indicator"></i>
-
-                        onkeydown="handleKeyDown(event)"
-
-                        oninput="autoResizeInput()"                    <span id="statusText">Connecting...</span>            <!-- Chat Messages -->
-
-                    ></textarea>
-
-                    <button                 </div>            <div class="chat-container" id="chatContainer">
-
-                        id="sendButton" 
-
-                        onclick="sendMessage()"             </div>                <div class="welcome-message" id="welcomeMessage">
-
-                        disabled
-
-                    >                                <div class="welcome-content">
-
-                        <i class="fas fa-paper-plane"></i>
-
-                    </button>            <div class="chat-messages" id="chatMessages">                        <i class="fas fa-robot welcome-icon"></i>
-
-                </div>
-
-            </div>                <div class="welcome-message">                        <h2>Welcome to MCP Chat Agent</h2>
-
-        </div>
-
-    </div>                    <div class="welcome-content">                        <p>I'm your AI assistant powered by Model Context Protocol. I can help you with various tasks using external tools and services.</p>
-
-
-
-    <!-- Settings Modal -->                        <div class="welcome-icon">                        <div class="sample-prompts">
-
-    <div class="modal-overlay" id="settingsModal" style="display: none;">
-
-        <div class="modal">                            <i class="fas fa-robot"></i>                            <div class="prompt-card" onclick="sendSamplePrompt('Tell me about the weather')">
-
-            <div class="modal-header">
-
-                <h3>Settings</h3>                        </div>                                <i class="fas fa-cloud-sun"></i>
-
-                <button class="modal-close" onclick="closeSettings()">
-
-                    <i class="fas fa-times"></i>                        <h2>Welcome to AI Chat Agent</h2>                                <span>Ask about weather</span>
-
-                </button>
-
-            </div>                        <p>I'm your AI assistant powered by advanced language models and DataHub tools. How can I help you today?</p>                            </div>
-
-            <div class="modal-body">
-
-                <div class="form-group">                        <div class="suggested-prompts">                            <div class="prompt-card" onclick="sendSamplePrompt('Help me find datasets')">
-
-                    <label for="mcpUrlInput">MCP Server URL</label>
-
-                    <input type="text" id="mcpUrlInput" placeholder="http://localhost:3002/sse">                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('What DataHub tools are available?')">                                <i class="fas fa-database"></i>
-
-                    <small>URL of the Model Context Protocol server</small>
-
-                </div>                                <i class="fas fa-tools"></i>                                <span>Find datasets</span>
-
-                <div class="form-group">
-
-                    <label for="systemPromptInput">System Prompt</label>                                <span>What DataHub tools are available?</span>                            </div>
-
-                    <textarea id="systemPromptInput" rows="4" placeholder="Enter custom system prompt..."></textarea>
-
-                    <small>Custom instructions for the AI assistant</small>                            </div>                            <div class="prompt-card" onclick="sendSamplePrompt('Explain how you work')">
-
-                </div>
-
-            </div>                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Search for datasets in the catalog')">                                <i class="fas fa-question-circle"></i>
-
-            <div class="modal-footer">
-
-                <button class="btn-secondary" onclick="closeSettings()">Cancel</button>                                <i class="fas fa-search"></i>                                <span>Learn about me</span>
-
-                <button class="btn-primary" onclick="saveSettings()">Save Settings</button>
-
-            </div>                                <span>Search for datasets in the catalog</span>                            </div>
-
-        </div>
-
-    </div>                            </div>                        </div>
-
-
-
-    <script>                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Help me understand data lineage')">                    </div>
-
-        // Global variables
-
-        let ws = null;                                <i class="fas fa-project-diagram"></i>                </div>
-
-        let currentThreadId = null;
-
-        let sessionId = 'default';                                <span>Help me understand data lineage</span>                <!-- Messages will be added here dynamically -->
-
-        let isConnected = false;
-
-        let currentSettings = {                            </div>            </div>
-
-            mcpUrl: '',
-
-            systemPrompt: ''                        </div>
-
-        };
-
-                    </div>            <!-- Input Area -->
-
-        // Initialize the application
-
-        document.addEventListener('DOMContentLoaded', function() {                </div>            <div class="input-container">
-
-            initializeApp();
-
-        });            </div>                <div class="input-wrapper">
-
-
-
-        function initializeApp() {                                <textarea 
-
-            setupEventListeners();
-
-            connectWebSocket();            <div class="typing-indicator" id="typingIndicator" style="display: none;">                        id="messageInput" 
-
-            loadChatThreads();
-
-            loadSettings();                <div class="typing-dots">                        placeholder="Send a message..." 
-
-        }
-
-                    <span></span>                        rows="1"
-
-        function setupEventListeners() {
-
-            const messageInput = document.getElementById('messageInput');                    <span></span>                        onkeydown="handleKeyDown(event)"
-
-            const sendButton = document.getElementById('sendButton');
-
-                                <span></span>                        oninput="autoResize(this)"
-
-            messageInput.addEventListener('input', function() {
-
-                sendButton.disabled = !this.value.trim();                </div>                    ></textarea>
-
-                autoResizeInput();
-
-            });                <span>AI is thinking...</span>                    <button id="sendButton" onclick="sendMessage()" disabled>
-
-
-
-            messageInput.focus();            </div>                        <i class="fas fa-paper-plane"></i>
-
-        }
-
-                                </button>
-
-        function connectWebSocket() {
-
-            try {            <div class="chat-input-container">                </div>
-
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-
-                const wsUrl = `${protocol}//${window.location.host}/ws/chat`;                <div class="chat-input-wrapper">                <div class="input-footer">
-
-                
-
-                console.log('Connecting to WebSocket:', wsUrl);                    <textarea                     <small>Press Enter to send, Shift+Enter for new line</small>
-
-                ws = new WebSocket(wsUrl);
-
-                                        id="messageInput"                 </div>
-
-                ws.onopen = function() {
-
-                    console.log('WebSocket connected');                        placeholder="Type your message here..."             </div>
-
-                    updateConnectionStatus('connected');
-
-                    isConnected = true;                        rows="1"        </div>
-
-                    
-
-                    ws.send(JSON.stringify({                        onkeydown="handleKeyDown(event)"    </div>
-
-                        type: 'config',
-
-                        session_id: sessionId,                        oninput="autoResizeInput()"
-
-                        thread_id: currentThreadId,
-
-                        mcp_url: currentSettings.mcpUrl,                    ></textarea>    <!-- Configuration Modal -->
-
-                        system_prompt: currentSettings.systemPrompt
-
-                    }));                    <button     <div id="configModal" class="modal">
-
-                };
-
-                                        id="sendButton"         <div class="modal-content">
-
-                ws.onmessage = function(event) {
-
-                    try {                        onclick="sendMessage()"             <div class="modal-header">
-
-                        const data = JSON.parse(event.data);
-
-                        handleWebSocketMessage(data);                        disabled                <h2><i class="fas fa-cog"></i> Settings</h2>
-
-                    } catch (e) {
-
-                        console.error('Error parsing WebSocket message:', e);                    >                <button class="close-btn" onclick="closeConfig()">
-
-                    }
-
-                };                        <i class="fas fa-paper-plane"></i>                    <i class="fas fa-times"></i>
-
-                
-
-                ws.onclose = function() {                    </button>                </button>
-
-                    console.log('WebSocket disconnected');
-
-                    updateConnectionStatus('disconnected');                </div>            </div>
-
-                    isConnected = false;
-
-                                </div>            <div class="modal-body">
-
-                    setTimeout(connectWebSocket, 3000);
-
-                };        </div>                <div class="config-section">
-
-                
-
-                ws.onerror = function(error) {    </div>                    <label for="mcpUrlInput">
-
-                    console.error('WebSocket error:', error);
-
-                    updateConnectionStatus('error');                        <i class="fas fa-server"></i>
-
-                };
-
-                    <!-- Settings Modal -->                        MCP Server URL
-
-            } catch (error) {
-
-                console.error('Failed to create WebSocket connection:', error);    <div class="modal-overlay" id="settingsModal" style="display: none;">                    </label>
-
-                updateConnectionStatus('error');
-
-            }        <div class="modal">                    <input type="text" id="mcpUrlInput" value="{{ mcp_url }}" 
-
-        }
-
-            <div class="modal-header">                           placeholder="http://0.0.0.0:3002/sse">
-
-        function handleWebSocketMessage(data) {
-
-            console.log('Received WebSocket message:', data);                <h3>Settings</h3>                    <small>The URL of the MCP server to connect to</small>
-
-            
-
-            switch (data.type) {                <button class="modal-close" onclick="closeSettings()">                </div>
-
-                case 'config_updated':
-
-                    console.log('Configuration updated:', data.config);                    <i class="fas fa-times"></i>                
-
-                    break;
-
-                                    </button>                <div class="config-section">
-
-                case 'thread_created':
-
-                    currentThreadId = data.thread_id;            </div>                    <label for="systemPromptInput">
-
-                    addMessageToChat('system', 'New conversation started');
-
-                    loadChatThreads();            <div class="modal-body">                        <i class="fas fa-brain"></i>
-
-                    break;
-
-                                    <div class="form-group">                        System Prompt
-
-                case 'user_message':
-
-                    addMessageToChat('user', data.content);                    <label for="mcpUrlInput">MCP Server URL</label>                    </label>
-
-                    break;
-
-                                        <input type="text" id="mcpUrlInput" placeholder="http://localhost:3002/sse">                    <textarea id="systemPromptInput" rows="6" 
-
-                case 'thinking':
-
-                    showTypingIndicator();                    <small>URL of the Model Context Protocol server</small>                              placeholder="Enter custom system prompt for the agent...">{{ system_prompt or '' }}</textarea>
-
-                    break;
-
-                                    </div>                    <small>Custom instructions for how the agent should behave. Leave empty for default behavior.</small>
-
-                case 'assistant_message':
-
-                    hideTypingIndicator();                <div class="form-group">                </div>
-
-                    addMessageToChat('assistant', data.content);
-
-                    currentThreadId = data.thread_id;                    <label for="systemPromptInput">System Prompt</label>            </div>
-
-                    break;
-
-                                        <textarea id="systemPromptInput" rows="4" placeholder="Enter custom system prompt..."></textarea>            <div class="modal-footer">
-
-                case 'error':
-
-                    hideTypingIndicator();                    <small>Custom instructions for the AI assistant</small>                <button class="btn btn-secondary" onclick="resetConfig()">
-
-                    addMessageToChat('error', data.content);
-
-                    break;                </div>                    <i class="fas fa-undo"></i>
-
-                    
-
-                case 'done':            </div>                    Reset
-
-                    hideTypingIndicator();
-
-                    enableInput();            <div class="modal-footer">                </button>
-
-                    break;
-
-                                    <button class="btn-secondary" onclick="closeSettings()">Cancel</button>                <button class="btn btn-primary" onclick="saveConfig()">
-
-                case 'threads':
-
-                    updateChatHistory(data.threads);                <button class="btn-primary" onclick="saveSettings()">Save Settings</button>                    <i class="fas fa-save"></i>
-
-                    break;
-
-                                </div>                    Save Settings
-
-                case 'messages':
-
-                    loadThreadMessages(data.messages);        </div>                </button>
-
-                    break;
-
-                        </div>            </div>
-
-                case 'thread_switched':
-
-                    currentThreadId = data.thread_id;        </div>
-
-                    loadThreadMessages();
-
-                    break;    <script>    </div>
-
-            }
-
-        }        // Global variables
-
-
-
-        function sendMessage() {        let ws = null;    <!-- Loading Overlay -->
-
-            const messageInput = document.getElementById('messageInput');
-
-            const message = messageInput.value.trim();        let currentThreadId = null;    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-
-            
-
-            if (!message) return;        let sessionId = 'default';        <div class="loading-content">
-
-            
-
-            messageInput.value = '';        let isConnected = false;            <div class="spinner"></div>
-
-            document.getElementById('sendButton').disabled = true;
-
-            autoResizeInput();        let currentSettings = {            <p>Thinking...</p>
-
-            
-
-            hideWelcomeMessage();            mcpUrl: '',        </div>
-
-            
-
-            if (ws && ws.readyState === WebSocket.OPEN) {            systemPrompt: ''    </div>
-
-                disableInput();
-
-                ws.send(JSON.stringify({        };
-
-                    type: 'chat',
-
-                    message: message,    <script>
-
-                    thread_id: currentThreadId,
-
-                    session_id: sessionId        // Initialize the application        // Global variables
-
-                }));
-
-            } else {        document.addEventListener('DOMContentLoaded', function() {        let currentThreadId = null;
-
-                sendMessageHTTP(message);
-
-            }            initializeApp();        let isTyping = false;
-
-        }
-
-        });        let ws = null;
-
-        function sendSuggestedMessage(message) {
-
-            document.getElementById('messageInput').value = message;
-
-            document.getElementById('sendButton').disabled = false;
-
-            sendMessage();        function initializeApp() {        // Initialize the app
-
-        }
-
-            setupEventListeners();        document.addEventListener('DOMContentLoaded', function() {
-
-        async function sendMessageHTTP(message) {
-
-            try {            connectWebSocket();            initializeApp();
-
-                disableInput();
-
-                addMessageToChat('user', message);            loadChatThreads();            connectWebSocket();
-
-                showTypingIndicator();
-
-                            loadSettings();            loadChatHistory();
-
-                const formData = new FormData();
-
-                formData.append('message', message);        }            
-
-                formData.append('thread_id', currentThreadId || '');
-
-                formData.append('session_id', sessionId);            // Enable send button when there's text
-
-                if (currentSettings.mcpUrl) {
-
-                    formData.append('mcp_url_input', currentSettings.mcpUrl);        function setupEventListeners() {            document.getElementById('messageInput').addEventListener('input', function() {
-
-                }
-
-                if (currentSettings.systemPrompt) {            const messageInput = document.getElementById('messageInput');                const sendBtn = document.getElementById('sendButton');
-
-                    formData.append('system_prompt_input', currentSettings.systemPrompt);
-
-                }            const sendButton = document.getElementById('sendButton');                sendBtn.disabled = this.value.trim() === '';
-
-                
-
-                const response = await fetch('/api/chat', {                        });
-
-                    method: 'POST',
-
-                    body: formData            messageInput.addEventListener('input', function() {        });
-
-                });
-
-                                sendButton.disabled = !this.value.trim();
-
-                const data = await response.json();
-
-                                autoResizeInput();        function initializeApp() {
-
-                if (data.error) {
-
-                    addMessageToChat('error', data.error);            });            // Create new chat thread if none exists
-
-                } else {
-
-                    addMessageToChat('assistant', data.response);            if (!currentThreadId) {
-
-                    currentThreadId = data.thread_id;
-
-                    loadChatThreads();            // Auto-focus input                createNewChat();
-
-                }
-
-                            messageInput.focus();            }
-
-            } catch (error) {
-
-                console.error('Error sending message:', error);        }            updateStatus('connected');
-
-                addMessageToChat('error', 'Failed to send message. Please try again.');
-
-            } finally {        }
-
-                hideTypingIndicator();
-
-                enableInput();        function connectWebSocket() {
-
-            }
-
-        }            try {        function connectWebSocket() {
-
-
-
-        function addMessageToChat(role, content) {                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-
-            const messagesContainer = document.getElementById('chatMessages');
-
-                            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;            const wsUrl = `${protocol}//${window.location.host}/ws/chat`;
-
-            const messageDiv = document.createElement('div');
-
-            messageDiv.className = `message ${role}-message`;                            
-
-            
-
-            let avatar, messageContent;                console.log('Connecting to WebSocket:', wsUrl);            ws = new WebSocket(wsUrl);
-
-            
-
-            if (role === 'user') {                ws = new WebSocket(wsUrl);            
-
-                avatar = '<div class="message-avatar user-avatar"><i class="fas fa-user"></i></div>';
-
-                messageContent = `<div class="message-content">${escapeHtml(content)}</div>`;                            ws.onopen = function() {
-
-            } else if (role === 'assistant') {
-
-                avatar = '<div class="message-avatar assistant-avatar"><i class="fas fa-robot"></i></div>';                ws.onopen = function() {                updateStatus('connected');
-
-                messageContent = `<div class="message-content">${formatMessage(content)}</div>`;
-
-            } else if (role === 'error') {                    console.log('WebSocket connected');            };
-
-                avatar = '<div class="message-avatar error-avatar"><i class="fas fa-exclamation-triangle"></i></div>';
-
-                messageContent = `<div class="message-content error-content">${escapeHtml(content)}</div>`;                    updateConnectionStatus('connected');            
-
-            } else {
-
-                avatar = '<div class="message-avatar system-avatar"><i class="fas fa-info-circle"></i></div>';                    isConnected = true;            ws.onmessage = function(event) {
-
-                messageContent = `<div class="message-content system-content">${escapeHtml(content)}</div>`;
-
-            }                                    const data = JSON.parse(event.data);
-
-            
-
-            messageDiv.innerHTML = avatar + messageContent;                    // Send initial configuration                handleWebSocketMessage(data);
-
-            messagesContainer.appendChild(messageDiv);
-
-                                ws.send(JSON.stringify({            };
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-        }                        type: 'config',            
-
-
-
-        function formatMessage(content) {                        session_id: sessionId,            ws.onclose = function() {
-
-            let formatted = escapeHtml(content);
-
-                                    thread_id: currentThreadId,                updateStatus('disconnected');
-
-            formatted = formatted.replace(/```(\\w+)?\\n([\\s\\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-
-            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');                        mcp_url: currentSettings.mcpUrl,                // Attempt to reconnect after 3 seconds
-
-            formatted = formatted.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
-
-            formatted = formatted.replace(/\\*(.*?)\\*/g, '<em>$1</em>');                        system_prompt: currentSettings.systemPrompt                setTimeout(connectWebSocket, 3000);
-
-            formatted = formatted.replace(/\\n/g, '<br>');
-
-                                }));            };
-
-            return formatted;
-
-        }                };            
-
-
-
-        function escapeHtml(text) {                            ws.onerror = function() {
-
-            const div = document.createElement('div');
-
-            div.textContent = text;                ws.onmessage = function(event) {                updateStatus('error');
-
-            return div.innerHTML;
-
-        }                    try {            };
-
-
-
-        function hideWelcomeMessage() {                        const data = JSON.parse(event.data);        }
-
-            const welcomeMessage = document.querySelector('.welcome-message');
-
-            if (welcomeMessage) {                        handleWebSocketMessage(data);
-
-                welcomeMessage.style.display = 'none';
-
-            }                    } catch (e) {        function handleWebSocketMessage(data) {
-
-        }
-
-                        console.error('Error parsing WebSocket message:', e);            if (data.type === 'response_chunk') {
-
-        function showTypingIndicator() {
-
-            document.getElementById('typingIndicator').style.display = 'flex';                    }                appendToLastMessage(data.content);
-
-        }
-
-                };            } else if (data.type === 'response_complete') {
-
-        function hideTypingIndicator() {
-
-            document.getElementById('typingIndicator').style.display = 'none';                                completeMessage();
-
-        }
-
-                ws.onclose = function() {            }
-
-        function disableInput() {
-
-            document.getElementById('messageInput').disabled = true;                    console.log('WebSocket disconnected');        }
-
-            document.getElementById('sendButton').disabled = true;
-
-        }                    updateConnectionStatus('disconnected');
-
-
-
-        function enableInput() {                    isConnected = false;        function createNewChat() {
-
-            document.getElementById('messageInput').disabled = false;
-
-            const input = document.getElementById('messageInput');                                currentThreadId = generateThreadId();
-
-            document.getElementById('sendButton').disabled = !input.value.trim();
-
-            input.focus();                    // Attempt to reconnect after 3 seconds            clearChat();
-
-        }
-
-                    setTimeout(connectWebSocket, 3000);            showWelcomeMessage();
-
-        function autoResizeInput() {
-
-            const textarea = document.getElementById('messageInput');                };            addChatToHistory(currentThreadId, 'New Chat');
-
-            textarea.style.height = 'auto';
-
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';                            updateChatHistory();
-
-        }
-
-                ws.onerror = function(error) {        }
-
-        function handleKeyDown(event) {
-
-            if (event.key === 'Enter' && !event.shiftKey) {                    console.error('WebSocket error:', error);
-
-                event.preventDefault();
-
-                sendMessage();                    updateConnectionStatus('error');        function generateThreadId() {
-
-            }
-
-        }                };            return 'thread_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-
-
-
-        function updateConnectionStatus(status) {                        }
-
-            const statusElement = document.getElementById('connectionStatus');
-
-            const statusText = document.getElementById('statusText');            } catch (error) {
-
-            
-
-            statusElement.className = 'connection-status ' + status;                console.error('Failed to create WebSocket connection:', error);        function clearChat() {
-
-            
-
-            switch (status) {                updateConnectionStatus('error');            const container = document.getElementById('chatContainer');
-
-                case 'connected':
-
-                    statusText.textContent = 'Connected';            }            container.innerHTML = '';
-
-                    break;
-
-                case 'disconnected':        }        }
-
-                    statusText.textContent = 'Disconnected';
-
-                    break;
-
-                case 'error':
-
-                    statusText.textContent = 'Connection Error';        function handleWebSocketMessage(data) {        function showWelcomeMessage() {
-
-                    break;
-
-                default:            console.log('Received WebSocket message:', data);            const welcomeHtml = `
-
-                    statusText.textContent = 'Connecting...';
-
-            }                            <div class="welcome-message" id="welcomeMessage">
-
-        }
-
-            switch (data.type) {                    <div class="welcome-content">
-
-        async function loadChatThreads() {
-
-            try {                case 'config_updated':                        <i class="fas fa-robot welcome-icon"></i>
-
-                const response = await fetch(`/api/threads?session_id=${sessionId}`);
-
-                const data = await response.json();                    console.log('Configuration updated:', data.config);                        <h2>Welcome to MCP Chat Agent</h2>
-
-                updateChatHistory(data.threads);
-
-            } catch (error) {                    break;                        <p>I'm your AI assistant powered by Model Context Protocol. I can help you with various tasks using external tools and services.</p>
-
-                console.error('Error loading chat threads:', error);
-
-            }                                            <div class="sample-prompts">
-
-        }
-
-                case 'thread_created':                            <div class="prompt-card" onclick="sendSamplePrompt('Tell me about the weather')">
-
-        function updateChatHistory(threads) {
-
-            const chatHistory = document.getElementById('chatHistory');                    currentThreadId = data.thread_id;                                <i class="fas fa-cloud-sun"></i>
-
-            chatHistory.innerHTML = '';
-
-                                addMessageToChat('system', `New conversation started`);                                <span>Ask about weather</span>
-
-            threads.forEach(thread => {
-
-                const threadDiv = document.createElement('div');                    loadChatThreads(); // Refresh thread list                            </div>
-
-                threadDiv.className = `chat-thread ${thread.thread_id === currentThreadId ? 'active' : ''}`;
-
-                threadDiv.onclick = () => switchToThread(thread.thread_id);                    break;                            <div class="prompt-card" onclick="sendSamplePrompt('Help me find datasets')">
-
-                
-
-                threadDiv.innerHTML = `                                                    <i class="fas fa-database"></i>
-
-                    <div class="thread-content">
-
-                        <div class="thread-title">${escapeHtml(thread.title)}</div>                case 'user_message':                                <span>Find datasets</span>
-
-                        <div class="thread-date">${formatDate(thread.created_at)}</div>
-
-                    </div>                    addMessageToChat('user', data.content);                            </div>
-
-                    <button class="thread-menu" onclick="event.stopPropagation(); deleteThread('${thread.thread_id}')">
-
-                        <i class="fas fa-trash"></i>                    break;                            <div class="prompt-card" onclick="sendSamplePrompt('Explain how you work')">
-
+                <div class="flex items-center space-x-2">
+                    <button class="btn btn-outline btn-sm"
+                            onclick="createNewThread()">
+                        New Chat
                     </button>
-
-                `;                                                    <i class="fas fa-question-circle"></i>
-
-                
-
-                chatHistory.appendChild(threadDiv);                case 'thinking':                                <span>Learn about me</span>
-
-            });
-
-        }                    showTypingIndicator();                            </div>
-
-
-
-        function switchToThread(threadId) {                    break;                        </div>
-
-            if (currentThreadId === threadId) return;
-
-                                                    </div>
-
-            currentThreadId = threadId;
-
-                            case 'assistant_message':                </div>
-
-            document.querySelectorAll('.chat-thread').forEach(el => {
-
-                el.classList.toggle('active', el.onclick.toString().includes(threadId));                    hideTypingIndicator();            `;
-
-            });
-
-                                addMessageToChat('assistant', data.content);            document.getElementById('chatContainer').innerHTML = welcomeHtml;
-
-            const messagesContainer = document.getElementById('chatMessages');
-
-            messagesContainer.innerHTML = '';                    currentThreadId = data.thread_id;        }
-
-            
-
-            if (ws && ws.readyState === WebSocket.OPEN) {                    break;
-
-                ws.send(JSON.stringify({
-
-                    type: 'get_messages',                            function sendSamplePrompt(prompt) {
-
-                    thread_id: threadId
-
-                }));                case 'error':            document.getElementById('messageInput').value = prompt;
-
-            } else {
-
-                loadThreadMessagesHTTP(threadId);                    hideTypingIndicator();            sendMessage();
-
-            }
-
-        }                    addMessageToChat('error', data.content);        }
-
-
-
-        async function loadThreadMessagesHTTP(threadId) {                    break;
-
-            try {
-
-                const response = await fetch(`/api/threads/${threadId}/messages`);                            function sendMessage() {
-
-                const data = await response.json();
-
-                loadThreadMessages(data.messages);                case 'done':            const input = document.getElementById('messageInput');
-
-            } catch (error) {
-
-                console.error('Error loading thread messages:', error);                    hideTypingIndicator();            const message = input.value.trim();
-
-            }
-
-        }                    enableInput();            
-
-
-
-        function loadThreadMessages(messages) {                    break;            if (!message || isTyping) return;
-
-            const messagesContainer = document.getElementById('chatMessages');
-
-            messagesContainer.innerHTML = '';                                
-
-            
-
-            messages.forEach(msg => {                case 'threads':            // Hide welcome message
-
-                addMessageToChat(msg.role, msg.content);
-
-            });                    updateChatHistory(data.threads);            const welcomeMsg = document.getElementById('welcomeMessage');
-
-        }
-
-                    break;            if (welcomeMsg) {
-
-        function createNewThread() {
-
-            currentThreadId = null;                                    welcomeMsg.style.display = 'none';
-
-            const messagesContainer = document.getElementById('chatMessages');
-
-            messagesContainer.innerHTML = `                case 'messages':            }
-
-                <div class="welcome-message">
-
-                    <div class="welcome-content">                    loadThreadMessages(data.messages);            
-
-                        <div class="welcome-icon">
-
-                            <i class="fas fa-robot"></i>                    break;            // Add user message
-
-                        </div>
-
-                        <h2>Welcome to AI Chat Agent</h2>                                addMessage('user', message);
-
-                        <p>I'm your AI assistant powered by advanced language models and DataHub tools. How can I help you today?</p>
-
-                        <div class="suggested-prompts">                case 'thread_switched':            input.value = '';
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('What DataHub tools are available?')">
-
-                                <i class="fas fa-tools"></i>                    currentThreadId = data.thread_id;            input.style.height = 'auto';
-
-                                <span>What DataHub tools are available?</span>
-
-                            </div>                    loadThreadMessages();            
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Search for datasets in the catalog')">
-
-                                <i class="fas fa-search"></i>                    break;            // Show typing indicator
-
-                                <span>Search for datasets in the catalog</span>
-
-                            </div>            }            showTyping();
-
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Help me understand data lineage')">
-
-                                <i class="fas fa-project-diagram"></i>        }            
-
-                                <span>Help me understand data lineage</span>
-
-                            </div>            // Send via WebSocket if available, otherwise use HTTP
-
-                        </div>
-
-                    </div>        function sendMessage() {            if (ws && ws.readyState === WebSocket.OPEN) {
-
                 </div>
-
-            `;            const messageInput = document.getElementById('messageInput');                ws.send(JSON.stringify({
-
-            
-
-            document.querySelectorAll('.chat-thread').forEach(el => {            const message = messageInput.value.trim();                    type: 'chat_message',
-
-                el.classList.remove('active');
-
-            });                                message: message,
-
-        }
-
-            if (!message) return;                    thread_id: currentThreadId
-
-        async function deleteThread(threadId) {
-
-            if (!confirm('Are you sure you want to delete this conversation?')) return;                            }));
-
-            
-
-            try {            // Clear input and disable send button            } else {
-
-                const formData = new FormData();
-
-                formData.append('session_id', sessionId);            messageInput.value = '';                sendMessageHTTP(message);
-
-                
-
-                await fetch(`/api/threads/${threadId}`, {            document.getElementById('sendButton').disabled = true;            }
-
-                    method: 'DELETE',
-
-                    body: formData            autoResizeInput();        }
-
-                });
-
-                            
-
-                if (currentThreadId === threadId) {
-
-                    createNewThread();            // Hide welcome message if it's the first message        async function sendMessageHTTP(message) {
-
-                }
-
-                            hideWelcomeMessage();            try {
-
-                loadChatThreads();
-
-            } catch (error) {                            const response = await fetch('/chat', {
-
-                console.error('Error deleting thread:', error);
-
-            }            // Send via WebSocket if available, otherwise use HTTP                    method: 'POST',
-
-        }
-
-            if (ws && ws.readyState === WebSocket.OPEN) {                    headers: {
-
-        function formatDate(dateString) {
-
-            const date = new Date(dateString);                disableInput();                        'Content-Type': 'application/json',
-
-            const now = new Date();
-
-            const diff = now - date;                ws.send(JSON.stringify({                    },
-
-            
-
-            if (diff < 24 * 60 * 60 * 1000) {                    type: 'chat',                    body: JSON.stringify({
-
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            } else if (diff < 7 * 24 * 60 * 60 * 1000) {                    message: message,                        message: message,
-
-                return date.toLocaleDateString([], { weekday: 'short' });
-
-            } else {                    thread_id: currentThreadId,                        thread_id: currentThreadId
-
-                return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-
-            }                    session_id: sessionId                    })
-
-        }
-
-                }));                });
-
-        function openSettings() {
-
-            document.getElementById('settingsModal').style.display = 'flex';            } else {                
-
-            loadSettingsForm();
-
-        }                // Fallback to HTTP API                const data = await response.json();
-
-
-
-        function closeSettings() {                sendMessageHTTP(message);                hideTyping();
-
-            document.getElementById('settingsModal').style.display = 'none';
-
-        }            }                addMessage('assistant', data.response);
-
-
-
-        function loadSettingsForm() {        }                
-
-            document.getElementById('mcpUrlInput').value = currentSettings.mcpUrl || '';
-
-            document.getElementById('systemPromptInput').value = currentSettings.systemPrompt || '';            } catch (error) {
-
-        }
-
-        function sendSuggestedMessage(message) {                hideTyping();
-
-        async function saveSettings() {
-
-            const mcpUrl = document.getElementById('mcpUrlInput').value.trim();            document.getElementById('messageInput').value = message;                addMessage('assistant', 'Sorry, I encountered an error. Please try again.');
-
-            const systemPrompt = document.getElementById('systemPromptInput').value.trim();
-
-                        document.getElementById('sendButton').disabled = false;                console.error('Error:', error);
-
-            try {
-
-                const response = await fetch('/update_config', {            sendMessage();            }
-
-                    method: 'POST',
-
-                    headers: {        }        }
-
-                        'Content-Type': 'application/json'
-
-                    },
-
-                    body: JSON.stringify({
-
-                        mcp_url: mcpUrl,        async function sendMessageHTTP(message) {        function addMessage(role, content) {
-
-                        system_prompt: systemPrompt
-
-                    })            try {            const container = document.getElementById('chatContainer');
-
-                });
-
-                                disableInput();            const messageDiv = document.createElement('div');
-
-                const data = await response.json();
-
-                                addMessageToChat('user', message);            messageDiv.className = `message ${role}-message`;
-
-                if (data.success) {
-
-                    currentSettings.mcpUrl = mcpUrl;                showTypingIndicator();            
-
-                    currentSettings.systemPrompt = systemPrompt;
-
-                                                const avatar = role === 'user' ? 
-
-                    localStorage.setItem('chatSettings', JSON.stringify(currentSettings));
-
-                                    const formData = new FormData();                '<div class="avatar user-avatar"><i class="fas fa-user"></i></div>' :
-
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-
-                        ws.send(JSON.stringify({                formData.append('message', message);                '<div class="avatar bot-avatar"><i class="fas fa-robot"></i></div>';
-
-                            type: 'config',
-
-                            session_id: sessionId,                formData.append('thread_id', currentThreadId || '');            
-
-                            thread_id: currentThreadId,
-
-                            mcp_url: mcpUrl,                formData.append('session_id', sessionId);            messageDiv.innerHTML = `
-
-                            system_prompt: systemPrompt
-
-                        }));                if (currentSettings.mcpUrl) {                ${avatar}
-
-                    }
-
-                                        formData.append('mcp_url_input', currentSettings.mcpUrl);                <div class="message-content">
-
-                    closeSettings();
-
-                    addMessageToChat('system', 'Settings updated successfully');                }                    <div class="message-text">${formatMessage(content)}</div>
-
-                } else {
-
-                    alert('Error updating settings: ' + data.error);                if (currentSettings.systemPrompt) {                    <div class="message-time">${getCurrentTime()}</div>
-
-                }
-
-            } catch (error) {                    formData.append('system_prompt_input', currentSettings.systemPrompt);                </div>
-
-                console.error('Error saving settings:', error);
-
-                alert('Error saving settings. Please try again.');                }            `;
-
-            }
-
-        }                            
-
-
-
-        function loadSettings() {                const response = await fetch('/api/chat', {            container.appendChild(messageDiv);
-
-            const saved = localStorage.getItem('chatSettings');
-
-            if (saved) {                    method: 'POST',            scrollToBottom();
-
-                currentSettings = JSON.parse(saved);
-
-            }                    body: formData        }
-
-        }
-
-                });
-
-        function toggleSidebar() {
-
-            const sidebar = document.getElementById('sidebar');                        function formatMessage(content) {
-
-            sidebar.classList.toggle('mobile-open');
-
-        }                const data = await response.json();            // Basic markdown-like formatting
-
-
-
-        document.addEventListener('click', function(event) {                            return content
-
-            const sidebar = document.getElementById('sidebar');
-
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');                if (data.error) {                .replace(/\n/g, '<br>')
-
-            
-
-            if (window.innerWidth <= 768 &&                     addMessageToChat('error', data.error);                .replace(/`([^`]+)`/g, '<code>$1</code>')
-
-                !sidebar.contains(event.target) && 
-
-                !mobileMenuBtn.contains(event.target)) {                } else {                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-
-                sidebar.classList.remove('mobile-open');
-
-            }                    addMessageToChat('assistant', data.response);                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-
-        });
-
-                    currentThreadId = data.thread_id;        }
-
-        document.getElementById('settingsModal').addEventListener('click', function(event) {
-
-            if (event.target === this) {                    loadChatThreads(); // Refresh thread list
-
-                closeSettings();
-
-            }                }        function showTyping() {
-
-        });
-
-    </script>                            isTyping = true;
-
-</body>
-
-</html>            } catch (error) {            const container = document.getElementById('chatContainer');
-
-                console.error('Error sending message:', error);            const typingDiv = document.createElement('div');
-
-                addMessageToChat('error', 'Failed to send message. Please try again.');            typingDiv.className = 'message assistant-message typing-message';
-
-            } finally {            typingDiv.id = 'typingIndicator';
-
-                hideTypingIndicator();            
-
-                enableInput();            typingDiv.innerHTML = `
-
-            }                <div class="avatar bot-avatar"><i class="fas fa-robot"></i></div>
-
-        }                <div class="message-content">
-
-                    <div class="typing-indicator">
-
-        function addMessageToChat(role, content) {                        <span></span>
-
-            const messagesContainer = document.getElementById('chatMessages');                        <span></span>
-
-                                    <span></span>
-
-            const messageDiv = document.createElement('div');                    </div>
-
-            messageDiv.className = `message ${role}-message`;                </div>
-
-                        `;
-
-            let avatar, messageContent;            
-
-                        container.appendChild(typingDiv);
-
-            if (role === 'user') {            scrollToBottom();
-
-                avatar = '<div class="message-avatar user-avatar"><i class="fas fa-user"></i></div>';        }
-
-                messageContent = `<div class="message-content">${escapeHtml(content)}</div>`;
-
-            } else if (role === 'assistant') {        function hideTyping() {
-
-                avatar = '<div class="message-avatar assistant-avatar"><i class="fas fa-robot"></i></div>';            isTyping = false;
-
-                messageContent = `<div class="message-content">${formatMessage(content)}</div>`;            const typingIndicator = document.getElementById('typingIndicator');
-
-            } else if (role === 'error') {            if (typingIndicator) {
-
-                avatar = '<div class="message-avatar error-avatar"><i class="fas fa-exclamation-triangle"></i></div>';                typingIndicator.remove();
-
-                messageContent = `<div class="message-content error-content">${escapeHtml(content)}</div>`;            }
-
-            } else {        }
-
-                avatar = '<div class="message-avatar system-avatar"><i class="fas fa-info-circle"></i></div>';
-
-                messageContent = `<div class="message-content system-content">${escapeHtml(content)}</div>`;        function appendToLastMessage(content) {
-
-            }            // For streaming responses
-
-                        const messages = document.querySelectorAll('.assistant-message:not(.typing-message)');
-
-            messageDiv.innerHTML = avatar + messageContent;            const lastMessage = messages[messages.length - 1];
-
-            messagesContainer.appendChild(messageDiv);            if (lastMessage) {
-
-                            const textElement = lastMessage.querySelector('.message-text');
-
-            // Scroll to bottom                textElement.innerHTML += content;
-
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;                scrollToBottom();
-
-        }            }
-
-        }
-
-        function formatMessage(content) {
-
-            // Basic markdown-like formatting        function completeMessage() {
-
-            let formatted = escapeHtml(content);            hideTyping();
-
-                        isTyping = false;
-
-            // Convert code blocks        }
-
-            formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>');
-
-                    function scrollToBottom() {
-
-            // Convert inline code            const container = document.getElementById('chatContainer');
-
-            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');            container.scrollTop = container.scrollHeight;
-
-                    }
-
-            // Convert bold text
-
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');        function getCurrentTime() {
-
-                        return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-            // Convert italic text        }
-
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
-
-                    function handleKeyDown(event) {
-
-            // Convert line breaks            if (event.key === 'Enter' && !event.shiftKey) {
-
-            formatted = formatted.replace(/\n/g, '<br>');                event.preventDefault();
-
-                            sendMessage();
-
-            return formatted;            }
-
-        }        }
-
-
-
-        function escapeHtml(text) {        function autoResize(textarea) {
-
-            const div = document.createElement('div');            textarea.style.height = 'auto';
-
-            div.textContent = text;            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-
-            return div.innerHTML;        }
-
-        }
-
-        function toggleSidebar() {
-
-        function hideWelcomeMessage() {            const sidebar = document.getElementById('sidebar');
-
-            const welcomeMessage = document.querySelector('.welcome-message');            sidebar.classList.toggle('collapsed');
-
-            if (welcomeMessage) {        }
-
-                welcomeMessage.style.display = 'none';
-
-            }        function updateStatus(status) {
-
-        }            const dot = document.getElementById('statusDot');
-
-            const text = document.getElementById('statusText');
-
-        function showTypingIndicator() {            
-
-            document.getElementById('typingIndicator').style.display = 'flex';            switch(status) {
-
-        }                case 'connected':
-
-                    dot.className = 'status-dot connected';
-
-        function hideTypingIndicator() {                    text.textContent = 'Connected';
-
-            document.getElementById('typingIndicator').style.display = 'none';                    break;
-
-        }                case 'disconnected':
-
-                    dot.className = 'status-dot disconnected';
-
-        function disableInput() {                    text.textContent = 'Disconnected';
-
-            document.getElementById('messageInput').disabled = true;                    break;
-
-            document.getElementById('sendButton').disabled = true;                case 'error':
-
-        }                    dot.className = 'status-dot error';
-
-                    text.textContent = 'Error';
-
-        function enableInput() {                    break;
-
-            document.getElementById('messageInput').disabled = false;            }
-
-            const input = document.getElementById('messageInput');        }
-
-            document.getElementById('sendButton').disabled = !input.value.trim();
-
-            input.focus();        // Configuration functions
-
-        }        function openConfig() {
-
-            document.getElementById('configModal').style.display = 'flex';
-
-        function autoResizeInput() {        }
-
-            const textarea = document.getElementById('messageInput');
-
-            textarea.style.height = 'auto';        function closeConfig() {
-
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';            document.getElementById('configModal').style.display = 'none';
-
-        }        }
-
-
-
-        function handleKeyDown(event) {        async function saveConfig() {
-
-            if (event.key === 'Enter' && !event.shiftKey) {            const mcpUrl = document.getElementById('mcpUrlInput').value;
-
-                event.preventDefault();            const systemPrompt = document.getElementById('systemPromptInput').value;
-
-                sendMessage();            
-
-            }            try {
-
-        }                const response = await fetch('/update_config', {
-
-                    method: 'POST',
-
-        function updateConnectionStatus(status) {                    headers: {
-
-            const statusElement = document.getElementById('connectionStatus');                        'Content-Type': 'application/json',
-
-            const statusText = document.getElementById('statusText');                    },
-
-            const indicator = statusElement.querySelector('.status-indicator');                    body: JSON.stringify({
-
-                                    mcp_url: mcpUrl,
-
-            statusElement.className = 'connection-status ' + status;                        system_prompt: systemPrompt
-
-                                })
-
-            switch (status) {                });
-
-                case 'connected':                
-
-                    statusText.textContent = 'Connected';                const data = await response.json();
-
-                    break;                if (data.success) {
-
-                case 'disconnected':                    showNotification('✅ Configuration updated successfully!', 'success');
-
-                    statusText.textContent = 'Disconnected';                    closeConfig();
-
-                    break;                } else {
-
-                case 'error':                    showNotification('❌ Error updating configuration: ' + data.error, 'error');
-
-                    statusText.textContent = 'Connection Error';                }
-
-                    break;            } catch (error) {
-
-                default:                showNotification('❌ Error: ' + error, 'error');
-
-                    statusText.textContent = 'Connecting...';            }
-
-            }        }
-
-        }
-
-        function resetConfig() {
-
-        // Chat history management            document.getElementById('mcpUrlInput').value = 'http://10.241.89.113:3002/sse';
-
-        async function loadChatThreads() {            document.getElementById('systemPromptInput').value = '';
-
-            try {        }
-
-                const response = await fetch(`/api/threads?session_id=${sessionId}`);
-
-                const data = await response.json();        function showNotification(message, type) {
-
-                updateChatHistory(data.threads);            // Simple notification - you can enhance this
-
-            } catch (error) {            alert(message);
-
-                console.error('Error loading chat threads:', error);        }
-
-            }
-
-        }        // Chat history functions (localStorage for now, will use Redis backend)
-
-        function addChatToHistory(threadId, title) {
-
-        function updateChatHistory(threads) {            const history = JSON.parse(localStorage.getItem('chatHistory') || '{}');
-
-            const chatHistory = document.getElementById('chatHistory');            history[threadId] = {
-
-            chatHistory.innerHTML = '';                title: title,
-
-                            timestamp: Date.now()
-
-            threads.forEach(thread => {            };
-
-                const threadDiv = document.createElement('div');            localStorage.setItem('chatHistory', JSON.stringify(history));
-
-                threadDiv.className = `chat-thread ${thread.thread_id === currentThreadId ? 'active' : ''}`;        }
-
-                threadDiv.onclick = () => switchToThread(thread.thread_id);
-
-                        function loadChatHistory() {
-
-                threadDiv.innerHTML = `            const history = JSON.parse(localStorage.getItem('chatHistory') || '{}');
-
-                    <div class="thread-content">            const historyContainer = document.getElementById('chatHistory');
-
-                        <div class="thread-title">${escapeHtml(thread.title)}</div>            
-
-                        <div class="thread-date">${formatDate(thread.created_at)}</div>            Object.entries(history)
-
-                    </div>                .sort(([,a], [,b]) => b.timestamp - a.timestamp)
-
-                    <button class="thread-menu" onclick="event.stopPropagation(); deleteThread('${thread.thread_id}')">                .forEach(([threadId, data]) => {
-
-                        <i class="fas fa-trash"></i>                    const item = document.createElement('div');
-
-                    </button>                    item.className = 'chat-history-item';
-
-                `;                    if (threadId === currentThreadId) {
-
-                                        item.classList.add('active');
-
-                chatHistory.appendChild(threadDiv);                    }
-
-            });                    
-
-        }                    item.innerHTML = `
-
-                        <div class="chat-title">${data.title}</div>
-
-        function switchToThread(threadId) {                        <div class="chat-actions">
-
-            if (currentThreadId === threadId) return;                            <button onclick="loadChat('${threadId}')" title="Load chat">
-
-                                            <i class="fas fa-comment"></i>
-
-            currentThreadId = threadId;                            </button>
-
-                                        <button onclick="deleteChat('${threadId}')" title="Delete chat">
-
-            // Update active thread in UI                                <i class="fas fa-trash"></i>
-
-            document.querySelectorAll('.chat-thread').forEach(el => {                            </button>
-
-                el.classList.toggle('active', el.onclick.toString().includes(threadId));                        </div>
-
-            });                    `;
-
-                                
-
-            // Clear current messages                    historyContainer.appendChild(item);
-
-            const messagesContainer = document.getElementById('chatMessages');                });
-
-            messagesContainer.innerHTML = '';        }
-
-            
-
-            // Load thread messages        function loadChat(threadId) {
-
-            if (ws && ws.readyState === WebSocket.OPEN) {            currentThreadId = threadId;
-
-                ws.send(JSON.stringify({            // In a real app, load messages from backend
-
-                    type: 'get_messages',            clearChat();
-
-                    thread_id: threadId            updateChatHistory();
-
-                }));        }
-
-            } else {
-
-                loadThreadMessagesHTTP(threadId);        function deleteChat(threadId) {
-
-            }            if (confirm('Are you sure you want to delete this chat?')) {
-
-        }                const history = JSON.parse(localStorage.getItem('chatHistory') || '{}');
-
-                delete history[threadId];
-
-        async function loadThreadMessagesHTTP(threadId) {                localStorage.setItem('chatHistory', JSON.stringify(history));
-
-            try {                updateChatHistory();
-
-                const response = await fetch(`/api/threads/${threadId}/messages`);                
-
-                const data = await response.json();                if (threadId === currentThreadId) {
-
-                loadThreadMessages(data.messages);                    createNewChat();
-
-            } catch (error) {                }
-
-                console.error('Error loading thread messages:', error);            }
-
-            }        }
-
-        }
-
-        function updateChatHistory() {
-
-        function loadThreadMessages(messages) {            const historyContainer = document.getElementById('chatHistory');
-
-            const messagesContainer = document.getElementById('chatMessages');            historyContainer.innerHTML = '';
-
-            messagesContainer.innerHTML = '';            loadChatHistory();
-
-                    }
-
-            messages.forEach(msg => {    </script>
-
-                addMessageToChat(msg.role, msg.content);</body>
-
-            });</html>
-
-        }
-
-        function createNewThread() {
-            currentThreadId = null;
-            const messagesContainer = document.getElementById('chatMessages');
-            messagesContainer.innerHTML = `
-                <div class="welcome-message">
-                    <div class="welcome-content">
-                        <div class="welcome-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <h2>Welcome to AI Chat Agent</h2>
-                        <p>I'm your AI assistant powered by advanced language models and DataHub tools. How can I help you today?</p>
-                        <div class="suggested-prompts">
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('What DataHub tools are available?')">
-                                <i class="fas fa-tools"></i>
-                                <span>What DataHub tools are available?</span>
-                            </div>
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Search for datasets in the catalog')">
-                                <i class="fas fa-search"></i>
-                                <span>Search for datasets in the catalog</span>
-                            </div>
-                            <div class="prompt-suggestion" onclick="sendSuggestedMessage('Help me understand data lineage')">
-                                <i class="fas fa-project-diagram"></i>
-                                <span>Help me understand data lineage</span>
-                            </div>
-                        </div>
+            </div>
+        </div>
+
+        <!-- Messages Area -->
+        <div id="messages-container"
+             class="flex-1 overflow-y-auto p-4 space-y-4"
+             hx-get="/api/threads/{{ thread_id or 'None' }}/messages"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+
+            <!-- Messages will be loaded here -->
+            {% if messages %}
+                {% for message in messages %}
+                <div class="flex {{ 'justify-end' if message.role == 'user' else 'justify-start' }}">
+                    <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {{
+                        'bg-primary text-white' if message.role == 'user'
+                        else 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100' }}">
+                        <p class="text-sm">{{ message.content }}</p>
+                        <p class="text-xs opacity-70 mt-1">{{ message.timestamp[:5] if message.timestamp else '' }}</p>
                     </div>
                 </div>
-            `;
+                {% endfor %}
+            {% else %}
+                <!-- Welcome Message -->
+                <div class="text-center py-12">
+                    <div class="mb-4">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Welcome to Agentify</h3>
+                    <p class="text-gray-500 dark:text-gray-400 mb-6">Start a conversation with your AI assistant</p>
+
+                    <!-- Quick Actions -->
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button class="btn btn-outline btn-sm"
+                                onclick="sendQuickMessage('What tools are available?')">
+                            Available Tools
+                        </button>
+                        <button class="btn btn-outline btn-sm"
+                                onclick="sendQuickMessage('Help me get started')">
+                            Get Started
+                        </button>
+                        <button class="btn btn-outline btn-sm"
+                                onclick="sendQuickMessage('Show me examples')">
+                            Examples
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Input Area -->
+        <div class="border-t border-gray-200 dark:border-gray-700 p-4">
+            <form id="chat-form"
+                  hx-post="/api/chat"
+                  hx-target="#messages-container"
+                  hx-swap="beforeend"
+                  hx-on:htmx:before-request="showLoading()"
+                  hx-on:htmx:after-request="hideLoading(); clearInput(); htmx.trigger('#thread-list', 'newThread')"
+                  class="flex gap-2">
+
+                <input type="hidden" name="thread_id" value="{{ thread_id or '' }}">
+
+                <div class="flex-1">
+                    <textarea
+                        name="message"
+                        id="message-input"
+                        placeholder="Type your message..."
+                        class="textarea textarea-bordered w-full resize-none"
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                        required></textarea>
+                </div>
+
+                <button type="submit"
+                        class="btn btn-primary"
+                        id="send-button">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                    </svg>
+                </button>
+            </form>
             
-            // Clear active thread selection
-            document.querySelectorAll('.chat-thread').forEach(el => {
-                el.classList.remove('active');
-            });
-        }
+            <!-- Loading indicator -->
+            <div id="loading-indicator" class="hidden mt-2 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                <span>AI is thinking...</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
-        async function deleteThread(threadId) {
-            if (!confirm('Are you sure you want to delete this conversation?')) return;
-            
-            try {
-                const formData = new FormData();
-                formData.append('session_id', sessionId);
-                
-                await fetch(`/api/threads/${threadId}`, {
-                    method: 'DELETE',
-                    body: formData
-                });
-                
-                if (currentThreadId === threadId) {
-                    createNewThread();
-                }
-                
-                loadChatThreads();
-            } catch (error) {
-                console.error('Error deleting thread:', error);
-            }
-        }
+{% block extra_scripts %}
+<script>
+// Auto-resize textarea
+function autoResize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+}
 
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = now - date;
-            
-            if (diff < 24 * 60 * 60 * 1000) {
-                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } else if (diff < 7 * 24 * 60 * 60 * 1000) {
-                return date.toLocaleDateString([], { weekday: 'short' });
-            } else {
-                return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-            }
-        }
+// Handle Enter key
+function handleKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+    }
+}
 
-        // Settings management
-        function openSettings() {
-            document.getElementById('settingsModal').style.display = 'flex';
-            loadSettingsForm();
-        }
+// Clear input after send
+function clearInput() {
+    const input = document.getElementById('message-input');
+    input.value = '';
+    input.style.height = 'auto';
+    input.focus();
+}
 
-        function closeSettings() {
-            document.getElementById('settingsModal').style.display = 'none';
-        }
+// Show loading indicator and disable send button
+function showLoading() {
+    const button = document.getElementById('send-button');
+    const input = document.getElementById('message-input');
+    const indicator = document.getElementById('loading-indicator');
+    
+    button.disabled = true;
+    button.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>';
+    input.disabled = true;
+    indicator.classList.remove('hidden');
+}
 
-        function loadSettingsForm() {
-            document.getElementById('mcpUrlInput').value = currentSettings.mcpUrl || '';
-            document.getElementById('systemPromptInput').value = currentSettings.systemPrompt || '';
-        }
+// Hide loading indicator and enable send button
+function hideLoading() {
+    const button = document.getElementById('send-button');
+    const input = document.getElementById('message-input');
+    const indicator = document.getElementById('loading-indicator');
+    
+    button.disabled = false;
+    button.innerHTML = '<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>';
+    input.disabled = false;
+    indicator.classList.add('hidden');
+}
 
-        async function saveSettings() {
-            const mcpUrl = document.getElementById('mcpUrlInput').value.trim();
-            const systemPrompt = document.getElementById('systemPromptInput').value.trim();
-            
-            try {
-                const response = await fetch('/update_config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        mcp_url: mcpUrl,
-                        system_prompt: systemPrompt
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    currentSettings.mcpUrl = mcpUrl;
-                    currentSettings.systemPrompt = systemPrompt;
-                    
-                    // Save to localStorage
-                    localStorage.setItem('chatSettings', JSON.stringify(currentSettings));
-                    
-                    // Update WebSocket configuration
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({
-                            type: 'config',
-                            session_id: sessionId,
-                            thread_id: currentThreadId,
-                            mcp_url: mcpUrl,
-                            system_prompt: systemPrompt
-                        }));
-                    }
-                    
-                    closeSettings();
-                    addMessageToChat('system', 'Settings updated successfully');
-                } else {
-                    alert('Error updating settings: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Error saving settings:', error);
-                alert('Error saving settings. Please try again.');
-            }
-        }
+// Send quick message
+function sendQuickMessage(message) {
+    const input = document.getElementById('message-input');
+    input.value = message;
+    document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+}
 
-        function loadSettings() {
-            // Load settings from localStorage or set defaults
-            const saved = localStorage.getItem('chatSettings');
-            if (saved) {
-                currentSettings = JSON.parse(saved);
-            }
-        }
+// Switch to a different thread
+function switchToThread(threadId) {
+    // Update the hidden input
+    document.querySelector('input[name="thread_id"]').value = threadId;
 
-        // Mobile responsive functions
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('mobile-open');
-        }
+    // Reload messages for the new thread
+    const messagesContainer = document.getElementById('messages-container');
+    htmx.ajax('GET', `/api/threads/${threadId}/messages`, {
+        target: messagesContainer,
+        swap: 'innerHTML'
+    });
 
-        // Click outside to close sidebar on mobile
-        document.addEventListener('click', function(event) {
-            const sidebar = document.getElementById('sidebar');
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-            
-            if (window.innerWidth <= 768 && 
-                !sidebar.contains(event.target) && 
-                !mobileMenuBtn.contains(event.target)) {
-                sidebar.classList.remove('mobile-open');
-            }
-        });
+    // Reload sidebar to highlight current thread
+    const sidebarContainer = document.getElementById('thread-list');
+    htmx.ajax('GET', `/api/threads/sidebar?current_thread_id=${threadId}`, {
+        target: sidebarContainer,
+        swap: 'innerHTML'
+    });
 
-        // Close modal when clicking outside
-        document.getElementById('settingsModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeSettings();
-            }
-        });
-    </script>
-</body>
-</html>
+    // Update URL without page reload
+    window.history.pushState({}, '', `/?thread_id=${threadId}`);
+}
+
+// Create a new thread
+function createNewThread() {
+    // Clear thread_id to create new thread
+    document.querySelector('input[name="thread_id"]').value = '';
+
+    // Reload messages (will show welcome message)
+    const messagesContainer = document.getElementById('messages-container');
+    htmx.ajax('GET', '/api/threads/None/messages', {
+        target: messagesContainer,
+        swap: 'innerHTML'
+    });
+
+    // Reload sidebar
+    const sidebarContainer = document.getElementById('thread-list');
+    htmx.ajax('GET', '/api/threads/sidebar', {
+        target: sidebarContainer,
+        swap: 'innerHTML'
+    });
+
+    // Update URL
+    window.history.pushState({}, '', '/');
+
+    // Focus input
+    document.getElementById('message-input').focus();
+}
+
+// Scroll to bottom when new messages arrive
+document.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'messages-container') {
+        evt.detail.target.scrollTop = evt.detail.target.scrollHeight;
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus input
+    document.getElementById('message-input').focus();
+});
+</script>
+{% endblock %}

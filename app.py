@@ -1,20 +1,20 @@
+import os
+import uuid
+import json
+from typing import Dict, Any, Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form, HTTPException, WebSocket, WebSocketDisconnect
+from dotenv import load_dotenv
+from fastapi import FastAPI, Request, Form, HTTPException, WebSocket, WebSocketDisconnect, Body
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from mcp_client_agent import MCPClient
-from session_manager import RedisSessionManager, ChatMessage
-from dotenv import load_dotenv
-import asyncio
-import json
-import uuid
-import os
-from datetime import datetime
-import typing
-# MCP state
+from src.mcp_client import MCPClient
+from src.session_manager import RedisSessionManager
+
 load_dotenv()
-mcp_client = MCPClient()
+# MCP Client
+llm_provider = os.getenv("LLM_PROVIDER", "azure").lower()
+mcp_client = MCPClient(llm_provider=llm_provider)
 available_tools = []
 tool_session_map = {}
 mcp_session = None
@@ -36,49 +36,209 @@ async def lifespan(app: FastAPI):
             print(f"[INFO] Connected to MCP server with {len(available_tools)} tools at {mcp_url}")
             yield
     except Exception as e:
-        print(f"[ERROR] Failed to connect to MCP server: {e}")
+        print(f"[WARN] Could not connect to MCP server at {mcp_url}: {e}")
+        print("[INFO] Starting without MCP server - chat will work but AI responses may be limited")
+        mcp_session = None
+        available_tools = []
+        tool_session_map = {}
         yield
     finally:
-        await mcp_client.close()
-        print("[INFO] MCP client closed")
+        if mcp_session:
+            await mcp_client.close()
+            print("[INFO] MCP client closed")
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Configuration Management Routes
+@app.get("/config")
+async def get_config_interface(request: Request):
+    """Render the configuration management interface"""
+    return templates.TemplateResponse("config.html", {
+        "request": request
+    })
+
+@app.get("/api/mcp/servers")
+async def list_mcp_servers():
+    """List all configured MCP servers"""
+    try:
+        servers = mcp_client.list_mcp_servers()
+        return {"servers": servers}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mcp/servers")
+async def add_mcp_server(server: Dict[str, Any]):
+    """Add a new MCP server configuration"""
+    try:
+        if mcp_client.add_mcp_server(server["id"], server):
+            return {"message": "MCP server added successfully"}
+        raise HTTPException(status_code=400, detail="Failed to add MCP server")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/mcp/servers/{server_id}")
+async def delete_mcp_server(server_id: str):
+    """Delete an MCP server configuration"""
+    try:
+        if mcp_client.remove_mcp_server(server_id):
+            return {"message": "MCP server deleted successfully"}
+        raise HTTPException(status_code=400, detail="Failed to delete MCP server")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/api/mcp/servers/{server_id}")
+async def update_mcp_server(server_id: str, server: Dict[str, Any]):
+    """Update an MCP server configuration"""
+    try:
+        if mcp_client.update_mcp_server(server_id, server):
+            return {"message": "MCP server updated successfully"}
+        raise HTTPException(status_code=400, detail="Failed to update MCP server")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mcp/servers/{server_id}/connect")
+async def connect_to_server(server_id: str):
+    """Connect to a specific MCP server"""
+    try:
+        if await mcp_client.connect_to_mcp(server_id):
+            return {"message": "Connected to MCP server successfully"}
+        raise HTTPException(status_code=400, detail="Failed to connect to MCP server")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/mcp/servers/{server_id}/disconnect")
+async def disconnect_from_server(server_id: str):
+    """Disconnect from a specific MCP server"""
+    try:
+        if await mcp_client.disconnect_from_mcp(server_id):
+            return {"message": "Disconnected from MCP server successfully"}
+        raise HTTPException(status_code=400, detail="Failed to disconnect from MCP server")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/mcp/status")
+async def get_mcp_status():
+    """Get MCP server connection status"""
+    try:
+        if mcp_session:
+            return """
+            <div class="h-3 w-3 rounded-full bg-green-500" title="Connected"></div>
+            """
+        else:
+            return """
+            <div class="h-3 w-3 rounded-full bg-red-500" title="Disconnected"></div>
+            """
+    except Exception:
+        return """
+        <div class="h-3 w-3 rounded-full bg-yellow-500" title="Error"></div>
+        """
+
 
 @app.get("/", response_class=HTMLResponse)
 async def get_chat_interface(request: Request):
-    global mcp_url, system_prompt
-    return templates.TemplateResponse("index_simple.html", {
+    """Render the chat interface with threads and messages"""
+    thread_id = request.query_params.get("thread_id", None)
+    messages = []
+    current_thread = None
+
+    if thread_id:
+        messages = [msg.to_dict() for msg in session_manager.get_messages(thread_id)]
+        current_thread = session_manager.get_thread(thread_id)
+
+    return templates.TemplateResponse("index.html", {
         "request": request,
-        "response": None,
+        "thread_id": thread_id,
+        "messages": messages,
+        "current_thread": current_thread,
         "mcp_url": mcp_url,
         "system_prompt": system_prompt
     })
 
-# Get chat threads for a session
+# Thread Management
 @app.get("/api/threads")
-async def get_threads(session_id: typing.Optional[str] = None):
-    """Get all threads for a session"""
-    if not session_id:
-        session_id = "default"
-    
-    threads = session_manager.get_user_threads(session_id)
-    return JSONResponse({
-        "session_id": session_id,
-        "threads": threads
-    })
+async def list_threads():
+    """List all chat threads for display in the sidebar"""
+    try:
+        threads = session_manager.get_all_threads()
+        return [{
+            "id": thread.thread_id,
+            "title": thread.title or "New Chat",
+            "message_count": len(thread.messages),
+            "last_message": thread.messages[-1].content[:100] + "..." if thread.messages else "",
+            "updated_at": thread.updated_at
+        } for thread in threads]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Get messages for a specific thread
+@app.get("/api/threads/sidebar")
+async def list_threads_sidebar(request: Request):
+    """List all chat threads as HTML for sidebar display"""
+    try:
+        threads = session_manager.get_all_threads()
+        # Get current thread ID from query params or from the main page context
+        current_thread_id = request.query_params.get("current_thread_id")
+
+        return templates.TemplateResponse(
+            "partials/thread_list.html",
+            {
+                "request": request,
+                "threads": [{
+                    "id": thread.thread_id,
+                    "title": thread.title or "New Chat",
+                    "message_count": len(thread.messages),
+                    "last_message": thread.messages[-1].content[:100] + "..." if thread.messages else "",
+                    "updated_at": thread.updated_at
+                } for thread in threads],
+                "current_thread_id": current_thread_id
+            }
+        )
+    except Exception as e:
+        print(f"[ERROR] Failed to load thread sidebar: {e}")
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {
+                "request": request,
+                "error": f"Failed to load threads: {str(e)}"
+            },
+            status_code=500
+        )
+
 @app.get("/api/threads/{thread_id}/messages")
-async def get_thread_messages(thread_id: str):
-    """Get all messages in a thread"""
-    messages = session_manager.get_messages(thread_id)
-    return JSONResponse({
-        "thread_id": thread_id,
-        "messages": [msg.to_dict() for msg in messages]
-    })
+async def get_thread_messages_html(thread_id: str, request: Request):
+    """Get all messages in a thread as HTML for HTMX"""
+    if thread_id == "None" or not thread_id:
+        # Return empty messages HTML for new threads
+        return templates.TemplateResponse(
+            "partials/messages.html",
+            {
+                "request": request,
+                "messages": [],
+                "thread_id": None
+            }
+        )
+
+    try:
+        messages = session_manager.get_messages(thread_id)
+        return templates.TemplateResponse(
+            "partials/messages.html",
+            {
+                "request": request,
+                "messages": messages,
+                "thread_id": thread_id
+            }
+        )
+    except Exception as e:
+        print(f"[ERROR] Failed to get messages for thread {thread_id}: {e}")
+        return templates.TemplateResponse(
+            "partials/error.html",
+            {
+                "request": request,
+                "error": f"Failed to load messages: {str(e)}"
+            },
+            status_code=500
+        )
 
 # Create a new thread
 @app.post("/api/threads")
@@ -108,179 +268,112 @@ async def delete_thread(thread_id: str, session_id: str = Form("default")):
 
 # Enhanced chat endpoint with threading support
 @app.post("/api/chat")
-async def chat_api(
-    message: str = Form(...),
-    thread_id: typing.Optional[str] = Form(None),
-    session_id: str = Form("default"),
-    mcp_url_input: typing.Optional[str] = Form(None),
-    system_prompt_input: typing.Optional[str] = Form(None)
-):
-    """Chat with the agent using threading"""
-    global available_tools, tool_session_map, mcp_session, mcp_url, system_prompt
+async def chat_api(request: Request, message: str = Form(...), thread_id: Optional[str] = Form(None)):
+    """Process a chat message with HTMX support"""
+    if not message.strip():
+        if "HX-Request" in request.headers:
+            return templates.TemplateResponse(
+                "partials/error.html",
+                {
+                    "request": request,
+                    "error": "Message cannot be empty"
+                },
+                status_code=400
+            )
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-    # Update system prompt if provided
-    if system_prompt_input is not None:
-        system_prompt = system_prompt_input
-
-    # If user provided a new MCP URL, reconnect
-    if mcp_url_input and mcp_url_input != mcp_url:
-        mcp_url = mcp_url_input
-        try:
-            async with mcp_client.sse_client_lifecycle(mcp_url) as session:
-                mcp_client.session = session
-                mcp_session = session
-                available_tools = await mcp_client.list_tools()
-                tool_session_map = {tool['function']['name']: session for tool in available_tools}
-                print(f"[INFO] Switched to MCP server: {mcp_url}")
-        except Exception as e:
-            error_message = f"Error connecting to MCP server: {str(e)}"
-            print(f"[ERROR] {error_message}")
-            return JSONResponse({"error": error_message}, status_code=500)
-
-    # Create thread if none provided
-    if not thread_id:
-        # Generate title from first few words of message
+    # Create thread if it doesn't exist
+    thread = session_manager.get_thread(thread_id)
+    if not thread:
         title_words = message.split()[:4]
         title = " ".join(title_words) + ("..." if len(title_words) == 4 else "")
-        thread_id = session_manager.create_thread(
-            title=title, 
-            user_id=session_id, 
-            mcp_url=mcp_url, 
-            system_prompt=system_prompt
-        )
-
-    if not mcp_session:
-        return JSONResponse({"error": "MCP server not connected"}, status_code=500)
-
+        session_manager.create_thread(title=title, user_id="default", mcp_url=mcp_url, system_prompt=system_prompt, thread_id=thread_id)
+    
+    # Add user message to thread
+    session_manager.add_message(thread_id, "user", message)
+    
+    # Get thread context
+    thread = session_manager.get_thread(thread_id)
+    
+    # Build conversation context
+    messages = session_manager.get_messages(thread_id)
+    conversation_messages = []
+    
+    # Create enhanced system prompt with tool information
+    tool_info = ""
+    if available_tools:
+        tool_names = [tool['function']['name'] for tool in available_tools]
+        tool_info = f"\n\nYou have access to the following tools: {', '.join(tool_names)}. When users ask about tools or capabilities, mention these specific tools that are available to you."
+    
+    effective_system_prompt = (thread.system_prompt if thread and thread.system_prompt else system_prompt) + tool_info
+    
+    if effective_system_prompt:
+        conversation_messages.append({"role": "system", "content": effective_system_prompt})
+    
+    # Add recent thread history (last 10 messages)
+    for msg in messages[-10:]:
+        if msg.role in ["user", "assistant"]:
+            conversation_messages.append({"role": msg.role, "content": msg.content})
+    
+    # Set conversation context in MCP client
+    mcp_client.messages = conversation_messages
+    
     try:
-        # Add user message to thread
-        session_manager.add_message(thread_id, "user", message)
-        
-        # Get thread context for system prompt
-        thread = session_manager.get_thread(thread_id)
-        effective_system_prompt = thread.system_prompt if thread and thread.system_prompt else system_prompt
-        
-        # Prepare messages with system prompt and thread history
-        thread_messages = session_manager.get_messages(thread_id)
-        
-        # Build conversation context
-        conversation_messages = []
-        if effective_system_prompt:
-            conversation_messages.append({"role": "system", "content": effective_system_prompt})
-        
-        # Add recent thread history (last 10 messages to avoid token limits)
-        for msg in thread_messages[-10:]:
-            if msg.role in ["user", "assistant"]:
-                conversation_messages.append({"role": msg.role, "content": msg.content})
-        
-        # Temporarily set messages in client
-        original_messages = mcp_client.messages.copy()
-        mcp_client.messages = conversation_messages
-        
-        # Process the query
+        # Process query
         response = await mcp_client.process_user_query(
             available_tools=available_tools,
             user_query=message,
             tool_session_map=tool_session_map
         )
         
-        # Restore original messages
-        mcp_client.messages = original_messages
-        
         # Add assistant response to thread
         session_manager.add_message(thread_id, "assistant", response)
         
-        return JSONResponse({
-            "response": response,
+        # If this is an HTMX request, return HTML partial
+        if "HX-Request" in request.headers:
+            messages = session_manager.get_messages(thread_id)[-2:]  # Get the last 2 messages (user + assistant)
+            return templates.TemplateResponse(
+                "partials/messages.html",
+                {
+                    "request": request,
+                    "messages": messages,
+                    "thread_id": thread_id
+                }
+            )
+        
+        # For regular API requests, return JSON
+        return {
             "thread_id": thread_id,
-            "mcp_url": mcp_url,
-            "system_prompt": effective_system_prompt
-        })
+            "response": response
+        }
         
     except Exception as e:
-        error_message = f"Error processing query: {str(e)}"
-        print(f"[ERROR] {error_message}")
-        return JSONResponse({
-            "error": error_message,
-            "thread_id": thread_id,
-            "mcp_url": mcp_url,
-            "system_prompt": system_prompt
-        }, status_code=500)
-async def chat_with_agent(request: Request, user_input: str = Form(...), mcp_url_input: str = Form(None), system_prompt_input: str = Form(None)):
-    global available_tools, tool_session_map, mcp_session, mcp_url, system_prompt
-
-    # Update system prompt if provided
-    if system_prompt_input is not None:
-        system_prompt = system_prompt_input
-        print(f"[INFO] Updated system prompt: {system_prompt[:50]}..." if system_prompt else "[INFO] Cleared system prompt")
-
-    # If user provided a new MCP URL, reconnect
-    if mcp_url_input and mcp_url_input != mcp_url:
-        mcp_url = mcp_url_input
-        try:
-            async with mcp_client.sse_client_lifecycle(mcp_url) as session:
-                mcp_client.session = session
-                mcp_session = session
-                available_tools = await mcp_client.list_tools()
-                tool_session_map = {tool['function']['name']: session for tool in available_tools}
-                print(f"[INFO] Switched to MCP server: {mcp_url}")
-        except Exception as e:
-            error_message = f"Error connecting to MCP server: {str(e)}"
-            print(f"[ERROR] {error_message}")
-            return templates.TemplateResponse("index.html", {
-                "request": request,
-                "response": error_message,
-                "mcp_url": mcp_url,
-                "system_prompt": system_prompt
-            })
-
-    if not mcp_session:
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "response": "Error: MCP server not connected",
-            "mcp_url": mcp_url,
-            "system_prompt": system_prompt
-        })
-
-    try:
-        # Add system prompt to the query processing if set
-        if system_prompt:
-            # Temporarily modify the client's message handling to include system prompt
-            original_messages = mcp_client.messages.copy()
-            if not mcp_client.messages or mcp_client.messages[0].get("role") != "system":
-                mcp_client.messages.insert(0, {"role": "system", "content": system_prompt})
+        error_msg = str(e)
+        print(f"[ERROR] Chat API error: {error_msg}")
         
-        response = await mcp_client.process_user_query(
-            available_tools=available_tools,
-            user_query=user_input,
-            tool_session_map=tool_session_map
-        )
+        # Add error response to thread so user can see what happened
+        error_response = f"I encountered an error: {error_msg}"
+        session_manager.add_message(thread_id, "assistant", error_response)
         
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "response": response,
-            "mcp_url": mcp_url,
-            "system_prompt": system_prompt
-        })
-    except Exception as e:
-        error_message = f"Error processing query: {str(e)}"
-        print(f"[ERROR] {error_message}")
-        return templates.TemplateResponse("index.html", {
-            "request": request,
-            "response": error_message,
-            "mcp_url": mcp_url,
-            "system_prompt": system_prompt
-        })
-
+        if "HX-Request" in request.headers:
+            messages = session_manager.get_messages(thread_id)[-2:]  # Get the last 2 messages (user + assistant)
+            return templates.TemplateResponse(
+                "partials/messages.html",
+                {
+                    "request": request,
+                    "messages": messages,
+                    "thread_id": thread_id
+                }
+            )
+        
+        raise HTTPException(status_code=500, detail=error_msg)
 # API endpoint for programmatic access
-from fastapi import Body
-from fastapi.responses import JSONResponse
 
 @app.post("/ask")
 async def ask_api(
     query: str = Body(...),
-    mcp_url_input: typing.Optional[str] = Body(None),
-    system_prompt_input: typing.Optional[str] = Body(None)
+    mcp_url_input: Optional[str] = Body(None),
+    system_prompt_input: Optional[str] = Body(None)
 ):
     global available_tools, tool_session_map, mcp_session, mcp_url, system_prompt
 
@@ -307,12 +400,9 @@ async def ask_api(
         return JSONResponse({"error": "MCP server not connected"}, status_code=500)
 
     try:
-        # Add system prompt to the query processing if set
-        if system_prompt:
-            # Temporarily modify the client's message handling to include system prompt
-            original_messages = mcp_client.messages.copy()
-            if not mcp_client.messages or mcp_client.messages[0].get("role") != "system":
-                mcp_client.messages.insert(0, {"role": "system", "content": system_prompt})
+        # Add system prompt if needed
+        if system_prompt and (not mcp_client.messages or mcp_client.messages[0].get("role") != "system"):
+            mcp_client.messages.insert(0, {"role": "system", "content": system_prompt})
         
         response = await mcp_client.process_user_query(
             available_tools=available_tools,
@@ -376,10 +466,10 @@ async def update_config(
 @app.post("/api/chat/stream")
 async def chat_stream(
     message: str = Form(...),
-    thread_id: typing.Optional[str] = Form(None),
+    thread_id: Optional[str] = Form(None),
     session_id: str = Form("default"),
-    mcp_url_input: typing.Optional[str] = Form(None),
-    system_prompt_input: typing.Optional[str] = Form(None)
+    mcp_url_input: Optional[str] = Form(None),
+    system_prompt_input: Optional[str] = Form(None)
 ):
     """Stream chat responses for real-time interaction"""
     global available_tools, tool_session_map, mcp_session, mcp_url, system_prompt
@@ -441,8 +531,7 @@ async def chat_stream(
                 if msg.role in ["user", "assistant"]:
                     conversation_messages.append({"role": msg.role, "content": msg.content})
 
-            # Set up client context
-            original_messages = mcp_client.messages.copy()
+            # Set conversation context
             mcp_client.messages = conversation_messages
 
             yield f"data: {json.dumps({'type': 'thinking', 'content': 'Processing your request...'})}\n\n"
@@ -453,9 +542,6 @@ async def chat_stream(
                 user_query=message,
                 tool_session_map=tool_session_map
             )
-
-            # Restore original messages
-            mcp_client.messages = original_messages
 
             # Add response to thread
             session_manager.add_message(current_thread_id, "assistant", response)
@@ -579,7 +665,7 @@ async def websocket_chat(websocket: WebSocket):
                 }))
                 
     except WebSocketDisconnect:
-        print(f"[INFO] WebSocket client disconnected")
+        print("WebSocket client disconnected")
     except Exception as e:
         print(f"[ERROR] WebSocket error: {e}")
         try:
@@ -587,8 +673,8 @@ async def websocket_chat(websocket: WebSocket):
                 "type": "error",
                 "content": f"Connection error: {str(e)}"
             }))
-        except:
-            pass
+        except Exception as send_error:
+            print(f"[ERROR] Failed to send error message: {send_error}")
 
 async def handle_websocket_chat(websocket: WebSocket, message: str, connection_data: dict):
     """Handle chat message through WebSocket"""
@@ -654,19 +740,14 @@ async def handle_websocket_chat(websocket: WebSocket, message: str, connection_d
             if msg.role in ["user", "assistant"]:
                 conversation_messages.append({"role": msg.role, "content": msg.content})
         
-        # Set up client context
-        original_messages = mcp_client.messages.copy()
+        # Set conversation context and process query
         mcp_client.messages = conversation_messages
         
-        # Process query
         response = await mcp_client.process_user_query(
             available_tools=available_tools,
             user_query=message,
             tool_session_map=tool_session_map
         )
-        
-        # Restore original messages
-        mcp_client.messages = original_messages
         
         # Add response to thread
         session_manager.add_message(connection_data["thread_id"], "assistant", response)

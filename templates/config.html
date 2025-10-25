@@ -1,0 +1,453 @@
+{% extends "base.html" %}
+
+{% block title %}Agentify - Configuration{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Configuration</h1>
+        <p class="text-gray-600 dark:text-gray-400">Manage your MCP servers and LLM settings</p>
+    </div>
+
+    <!-- MCP Servers Configuration -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold mb-6 flex items-center text-gray-900 dark:text-gray-100">
+            <svg class="h-6 w-6 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+            </svg>
+            MCP Servers
+        </h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">URL/Command</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700" id="mcpServersList">
+                    <!-- MCP servers will be listed here -->
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-6">
+            <button onclick="showAddMCPModal()" class="btn btn-primary">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add MCP Server
+            </button>
+        </div>
+    </div>
+
+    <!-- LLM Configuration -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-6 flex items-center text-gray-900 dark:text-gray-100">
+            <svg class="h-6 w-6 mr-2 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            LLM Configuration
+        </h2>
+        <form id="llmConfigForm" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Provider</label>
+                    <select name="llmProvider" class="select select-bordered w-full" onchange="updateLLMFields()">
+                        <option value="openai">OpenAI</option>
+                        <option value="azure">Azure OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="groq">Groq</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
+                    <input type="text" name="model" class="input input-bordered w-full" placeholder="gpt-4-turbo">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">API Key</label>
+                <input type="password" name="apiKey" class="input input-bordered w-full" placeholder="Enter your API key">
+            </div>
+
+            <div id="azureFields" class="hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Azure Endpoint</label>
+                        <input type="text" name="azureEndpoint" class="input input-bordered w-full" placeholder="https://your-endpoint.openai.azure.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">API Version</label>
+                        <input type="text" name="apiVersion" class="input input-bordered w-full" value="2024-12-01-preview">
+                    </div>
+                </div>
+            </div>
+
+            <div id="customFields" class="hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Base URL</label>
+                    <input type="text" name="baseUrl" class="input input-bordered w-full" placeholder="https://api.custom-llm.com/v1">
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add MCP Server Modal -->
+<div id="addMCPModal" class="modal">
+    <div class="modal-box max-w-2xl">
+        <h3 class="font-bold text-lg mb-4">Add MCP Server</h3>
+        <form id="addMCPForm" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Server ID</label>
+                    <input type="text" name="serverId" class="input input-bordered w-full" placeholder="e.g., kite, claude, custom">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
+                    <input type="text" name="name" class="input input-bordered w-full" placeholder="e.g., Kite Trading, Claude AI">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
+                <select name="type" class="select select-bordered w-full" onchange="updateMCPFields()">
+                    <option value="direct">Direct (SSE)</option>
+                    <option value="remote">Remote (stdio)</option>
+                </select>
+            </div>
+
+            <div id="directFields">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">URL</label>
+                    <input type="text" name="url" class="input input-bordered w-full" placeholder="https://mcp.service.com/mcp">
+                </div>
+            </div>
+
+            <div id="remoteFields" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Command</label>
+                    <input type="text" name="command" class="input input-bordered w-full" placeholder="npx">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Arguments (comma-separated)</label>
+                    <input type="text" name="args" class="input input-bordered w-full" placeholder="mcp-remote,https://mcp.service.com/mcp">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Authentication Type</label>
+                <select name="authType" class="select select-bordered w-full" onchange="updateAuthFields()">
+                    <option value="none">None</option>
+                    <option value="api_key">API Key</option>
+                    <option value="bearer">Bearer Token</option>
+                    <option value="custom">Custom Headers</option>
+                </select>
+            </div>
+
+            <div id="authFields" class="hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Headers (JSON)</label>
+                    <textarea name="headers" class="textarea textarea-bordered w-full" rows="3" placeholder='{"Authorization": "Bearer token"}'></textarea>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                <textarea name="description" class="textarea textarea-bordered w-full" rows="2" placeholder="Brief description of this MCP server"></textarea>
+            </div>
+        </form>
+
+        <div class="modal-action">
+            <button onclick="hideAddMCPModal()" class="btn">Cancel</button>
+            <button onclick="submitAddMCPForm()" class="btn btn-primary">Add Server</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container" class="toast toast-top toast-end z-50">
+    <!-- Toasts will be added here -->
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Update form fields based on selections
+function updateLLMFields() {
+    const provider = document.querySelector('[name="llmProvider"]').value;
+    document.getElementById('azureFields').classList.toggle('hidden', provider !== 'azure');
+    document.getElementById('customFields').classList.toggle('hidden', provider !== 'custom');
+}
+
+function updateMCPFields() {
+    const type = document.querySelector('[name="type"]').value;
+    document.getElementById('directFields').classList.toggle('hidden', type !== 'direct');
+    document.getElementById('remoteFields').classList.toggle('hidden', type !== 'remote');
+}
+
+function updateAuthFields() {
+    const authType = document.querySelector('[name="authType"]').value;
+    document.getElementById('authFields').classList.toggle('hidden', authType === 'none');
+}
+
+// Modal management
+function showAddMCPModal() {
+    document.getElementById('addMCPModal').classList.add('modal-open');
+}
+
+function hideAddMCPModal() {
+    document.getElementById('addMCPModal').classList.remove('modal-open');
+    document.getElementById('addMCPForm').reset();
+}
+
+// Notification system
+function showNotification(message, type = 'success') {
+    const toastContainer = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
+    toast.innerHTML = `
+        <div>
+            <span>${message}</span>
+        </div>
+    `;
+    toastContainer.appendChild(toast);
+
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+// Load MCP servers
+async function loadMCPServers() {
+    try {
+        const response = await fetch('/api/mcp/servers');
+        const data = await response.json();
+        const tbody = document.getElementById('mcpServersList');
+        tbody.innerHTML = '';
+
+        data.servers.forEach(server => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">${server.name}</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">${server.id}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="badge ${server.type === 'direct' ? 'badge-primary' : 'badge-secondary'}">
+                        ${server.type}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    ${server.type === 'direct' ? server.url : `${server.command} ${server.args.join(' ')}`}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="badge ${server.connected ? 'badge-success' : 'badge-error'}">
+                        ${server.connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    <button onclick="editMCPServer('${server.id}')" class="btn btn-sm btn-outline">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </button>
+                    <button onclick="deleteMCPServer('${server.id}')" class="btn btn-sm btn-outline btn-error">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                    ${!server.connected ? `
+                        <button onclick="connectMCPServer('${server.id}')" class="btn btn-sm btn-outline btn-success">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                            </svg>
+                        </button>
+                    ` : `
+                        <button onclick="disconnectMCPServer('${server.id}')" class="btn btn-sm btn-outline btn-warning">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"/>
+                            </svg>
+                        </button>
+                    `}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        showNotification('Failed to load MCP servers', 'error');
+    }
+}
+
+// Form submission handlers
+async function submitAddMCPForm() {
+    const form = document.getElementById('addMCPForm');
+    const formData = new FormData(form);
+
+    const mcpConfig = {
+        id: formData.get('serverId'),
+        name: formData.get('name'),
+        type: formData.get('type'),
+        description: formData.get('description'),
+        authType: formData.get('authType')
+    };
+
+    if (formData.get('type') === 'direct') {
+        mcpConfig.url = formData.get('url');
+    } else {
+        mcpConfig.command = formData.get('command');
+        mcpConfig.args = formData.get('args').split(',').map(arg => arg.trim());
+    }
+
+    if (formData.get('authType') !== 'none') {
+        try {
+            mcpConfig.headers = JSON.parse(formData.get('headers'));
+        } catch (e) {
+            showNotification('Invalid headers JSON format', 'error');
+            return;
+        }
+    }
+
+    try {
+        const response = await fetch('/api/mcp/servers', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(mcpConfig)
+        });
+
+        if (response.ok) {
+            hideAddMCPModal();
+            showNotification('MCP server added successfully');
+            loadMCPServers();
+        } else {
+            const error = await response.json();
+            showNotification(error.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to add MCP server', 'error');
+    }
+}
+
+async function submitLLMConfig(event) {
+    event.preventDefault();
+    const form = document.getElementById('llmConfigForm');
+    const formData = new FormData(form);
+
+    const config = {
+        provider: formData.get('llmProvider'),
+        apiKey: formData.get('apiKey'),
+        model: formData.get('model')
+    };
+
+    if (config.provider === 'azure') {
+        config.azureEndpoint = formData.get('azureEndpoint');
+        config.apiVersion = formData.get('apiVersion');
+    } else if (config.provider === 'custom') {
+        config.baseUrl = formData.get('baseUrl');
+    }
+
+    try {
+        const response = await fetch('/api/llm/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+        });
+
+        if (response.ok) {
+            showNotification('LLM configuration updated successfully');
+        } else {
+            const error = await response.json();
+            showNotification(error.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to update LLM configuration', 'error');
+    }
+}
+
+// MCP server management functions
+async function editMCPServer(serverId) {
+    // Implementation for editing MCP server
+    showNotification('Edit functionality coming soon', 'info');
+}
+
+async function deleteMCPServer(serverId) {
+    if (confirm('Are you sure you want to delete this MCP server?')) {
+        try {
+            const response = await fetch(`/api/mcp/servers/${serverId}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                showNotification('MCP server deleted successfully');
+                loadMCPServers();
+            } else {
+                const error = await response.json();
+                showNotification(error.message, 'error');
+            }
+        } catch (error) {
+            showNotification('Failed to delete MCP server', 'error');
+        }
+    }
+}
+
+async function connectMCPServer(serverId) {
+    try {
+        const response = await fetch(`/api/mcp/servers/${serverId}/connect`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showNotification('Connected to MCP server successfully');
+            loadMCPServers();
+        } else {
+            const error = await response.json();
+            showNotification(error.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to connect to MCP server', 'error');
+    }
+}
+
+async function disconnectMCPServer(serverId) {
+    try {
+        const response = await fetch(`/api/mcp/servers/${serverId}/disconnect`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            showNotification('Disconnected from MCP server successfully');
+            loadMCPServers();
+        } else {
+            const error = await response.json();
+            showNotification(error.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to disconnect from MCP server', 'error');
+    }
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', () => {
+    loadMCPServers();
+    document.getElementById('llmConfigForm').addEventListener('submit', submitLLMConfig);
+});
+</script>
+{% endblock %}

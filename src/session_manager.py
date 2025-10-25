@@ -4,7 +4,7 @@ Redis-based session management for chat threads
 import json
 import uuid
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 import os
 from dataclasses import dataclass, asdict
 
@@ -93,9 +93,12 @@ class RedisSessionManager:
         return f"user_threads:{user_id}"
     
     def create_thread(self, title: Optional[str] = None, user_id: str = "default", 
-                     mcp_url: Optional[str] = None, system_prompt: Optional[str] = None) -> str:
+                     mcp_url: Optional[str] = None, system_prompt: Optional[str] = None, 
+                     thread_id: Optional[str] = None) -> str:
         """Create a new chat thread"""
-        thread_id = str(uuid.uuid4())
+        if thread_id is None:
+            thread_id = str(uuid.uuid4())
+        
         now = datetime.now().isoformat()
         
         if title is None:
@@ -271,12 +274,30 @@ class RedisSessionManager:
                 thread.system_prompt = system_prompt
             self._save_thread(thread)
     
-    def clear_thread_messages(self, thread_id: str):
-        """Clear all messages from a thread"""
-        thread = self.get_thread(thread_id)
-        if thread:
-            thread.messages = []
-            self._save_thread(thread)
+    def get_all_threads(self) -> List[ChatThread]:
+        """Get all threads (for admin/debugging purposes)"""
+        threads = []
+        if self.redis_client:
+            try:
+                # Get all thread keys
+                keys = self.redis_client.keys("chat_thread:*")
+                for key in keys:
+                    thread_data = self.redis_client.get(key)
+                    if thread_data:
+                        try:
+                            thread = ChatThread.from_json(thread_data)
+                            threads.append(thread)
+                        except Exception as e:
+                            print(f"[ERROR] Failed to parse thread data: {e}")
+            except Exception as e:
+                print(f"[ERROR] Failed to get all threads from Redis: {e}")
+        else:
+            # Memory storage
+            threads = list(self._memory_store.values())
+        
+        # Sort by updated_at descending
+        threads.sort(key=lambda t: t.updated_at, reverse=True)
+        return threads
 
 # Global session manager instance
 session_manager = RedisSessionManager()

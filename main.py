@@ -2,7 +2,7 @@ import asyncio
 import json
 import os
 from datetime import datetime
-from mcp_client_agent import MCPClient
+from src.mcp_client import MCPClient
 from dotenv import load_dotenv
 load_dotenv()
 mcp_url = os.getenv("MCP_URL", "http://localhost:8000")
