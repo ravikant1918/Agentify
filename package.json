@@ -1,0 +1,20 @@
+{
+  "name": "agentify-backend",
+  "version": "1.0.0",
+  "description": "Backend for Agentify chat application",
+  "main": "main.py",
+  "scripts": {
+    "dev": "uvicorn app:app --host 0.0.0.0 --port 8001 --reload",
+    "start": "uvicorn app:app --host 0.0.0.0 --port 8001",
+    "install": "pip install -r requirement.txt"
+  },
+  "dependencies": {
+    "fastapi": "^0.104.1",
+    "uvicorn": "^0.24.0",
+    "python-multipart": "^0.0.6",
+    "redis": "^5.0.1",
+    "httpx": "^0.25.2",
+    "python-dotenv": "^1.0.0",
+    "jinja2": "^3.1.2"
+  }
+}

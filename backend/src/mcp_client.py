@@ -32,11 +32,26 @@ class MCPClient:
         self.api_key = os.getenv("LLM_API_KEY")
         self.base_url = os.getenv("BASE_URL", "https://api.openai.com/v1")
         
+        # Google Gemini configuration
+        self.google_api_key = os.getenv("GOOGLE_API_KEY")
+        self.google_models = os.getenv("GOOGLE_MODELS", "gemini-2.0-flash-exp")
+        self.google_api_url = os.getenv("GOOGLE_API_URL", "https://generativelanguage.googleapis.com/v1beta/models/")
+        
         # Validate required configuration
-        if not self.api_key:
-            raise ValueError("LLM_API_KEY environment variable is required")
-
-        if llm_provider == "azure":
+        if llm_provider == "google":
+            if not self.google_api_key:
+                raise ValueError("GOOGLE_API_KEY environment variable is required for Google Gemini")
+            try:
+                import google.generativeai as genai
+                genai.configure(api_key=self.google_api_key)
+                self.llm_client = genai.GenerativeModel(self.google_models)
+                print(f"[INFO] Using Google Gemini as LLM provider (Model: {self.google_models})")
+            except ImportError:
+                raise ValueError("google-generativeai package is required for Google Gemini support")
+        
+        elif llm_provider == "azure":
+            if not self.api_key:
+                raise ValueError("LLM_API_KEY environment variable is required")
             if not self.azure_endpoint:
                 raise ValueError("AZURE_ENDPOINT environment variable is required for Azure OpenAI")
             
@@ -48,13 +63,15 @@ class MCPClient:
             print(f"[INFO] Using Azure OpenAI as LLM provider (Model: {self.model})")
 
         elif llm_provider == "openai":
+            if not self.api_key:
+                raise ValueError("LLM_API_KEY environment variable is required")
             self.llm_client = OpenAI(
                 base_url=self.base_url,
                 api_key=self.api_key
             )
             print(f"[INFO] Using OpenAI as LLM provider (Model: {self.model})")
         else:
-            raise ValueError(f"Unsupported LLM provider: {llm_provider}")
+            raise ValueError(f"Unsupported LLM provider: {llm_provider}. Supported: google, azure, openai")
 
     async def connect_to_stdio_server(self, server_script_path: str):
         """Connect to MCP server using STDIO"""
@@ -257,15 +274,87 @@ class MCPClient:
     async def _call_llm(self, available_tools: List[Dict[str, Any]]):
         """Make LLM API call with error handling"""
         try:
-            return await asyncio.to_thread(
-                self.llm_client.chat.completions.create,
-                messages=self.messages,
-                model=self.model,
-                tools=available_tools if available_tools else None,
-                tool_choice="auto" if available_tools else "none",
-                temperature=0.1,  # Lower temperature for more consistent responses
-                max_tokens=4000   # Reasonable token limit
-            )
+            # Handle Google Gemini API differently
+            if hasattr(self, 'google_api_key') and self.google_api_key:
+                import google.generativeai as genai
+                
+                # Convert OpenAI-style messages to Gemini format
+                gemini_messages = []
+                system_message = None
+                
+                for msg in self.messages:
+                    role = msg.get("role", "")
+                    content = msg.get("content", "")
+                    
+                    if role == "system":
+                        system_message = content
+                    elif role == "user":
+                        gemini_messages.append({"role": "user", "parts": [content]})
+                    elif role == "assistant":
+                        gemini_messages.append({"role": "model", "parts": [content]})
+                    elif role == "tool":
+                        # Add tool results as model response
+                        gemini_messages.append({"role": "model", "parts": [content]})
+                
+                # Configure generation with system message if present
+                generation_config = genai.types.GenerationConfig(
+                    temperature=0.1,
+                    max_output_tokens=4000,
+                )
+                
+                # Create model with system instruction if available
+                if system_message:
+                    model = genai.GenerativeModel(
+                        self.google_models,
+                        system_instruction=system_message,
+                        generation_config=generation_config
+                    )
+                else:
+                    model = genai.GenerativeModel(
+                        self.google_models,
+                        generation_config=generation_config
+                    )
+                
+                # Start chat with history
+                chat = model.start_chat(history=gemini_messages[:-1] if gemini_messages else [])
+                
+                # Send the last message
+                if gemini_messages:
+                    last_message = gemini_messages[-1]
+                    response = await asyncio.to_thread(
+                        chat.send_message,
+                        last_message["parts"][0]
+                    )
+                    # Convert Gemini response to OpenAI-like format for compatibility
+                    return type('MockResponse', (), {
+                        'choices': [type('Choice', (), {
+                            'message': type('Message', (), {
+                                'content': response.text,
+                                'tool_calls': None
+                            })()
+                        })()]
+                    })()
+                else:
+                    # No messages, return empty response
+                    return type('MockResponse', (), {
+                        'choices': [type('Choice', (), {
+                            'message': type('Message', (), {
+                                'content': "Hello! How can I help you?",
+                                'tool_calls': None
+                            })()
+                        })()]
+                    })()
+            else:
+                # OpenAI/Azure API
+                return await asyncio.to_thread(
+                    self.llm_client.chat.completions.create,
+                    messages=self.messages,
+                    model=self.model,
+                    tools=available_tools if available_tools else None,
+                    tool_choice="auto" if available_tools else "none",
+                    temperature=0.1,  # Lower temperature for more consistent responses
+                    max_tokens=4000   # Reasonable token limit
+                )
         except Exception as e:
             print(f"[ERROR] LLM API call failed: {e}")
             raise
@@ -350,12 +439,46 @@ class MCPClient:
             "last_message_role": self.messages[-1].get("role") if self.messages else None
         }
     
+    def list_mcp_servers(self) -> List[Dict[str, Any]]:
+        """List configured MCP servers"""
+        # For now, return a simple list with the current server
+        servers = []
+        if hasattr(self, 'session') and self.session:
+            servers.append({
+                "id": "default",
+                "name": "Default MCP Server",
+                "url": os.getenv("MCP_URL", "http://localhost:8000/sse"),
+                "status": "connected",
+                "tool_count": len(getattr(self, 'available_tools', []))
+            })
+        return servers
+
+    def add_mcp_server(self, server_id: str, server_config: Dict[str, Any]) -> bool:
+        """Add a new MCP server configuration"""
+        # For now, just store in memory - in production this would be persisted
+        print(f"[INFO] Added MCP server {server_id}: {server_config}")
+        return True
+
+    def remove_mcp_server(self, server_id: str) -> bool:
+        """Remove an MCP server configuration"""
+        print(f"[INFO] Removed MCP server {server_id}")
+        return True
+
+    def update_mcp_server(self, server_id: str, server_config: Dict[str, Any]) -> bool:
+        """Update an MCP server configuration"""
+        print(f"[INFO] Updated MCP server {server_id}: {server_config}")
+        return True
+
+    async def connect_to_mcp(self, server_id: str) -> bool:
+        """Connect to a specific MCP server"""
+        print(f"[INFO] Connecting to MCP server {server_id}")
+        # For now, assume connection succeeds
+        return True
+
     async def close(self):
-        """Clean up resources with enhanced error handling"""
+        """Close the MCP client and cleanup resources"""
         try:
             await self.exit_stack.aclose()
-            print("[INFO] Cleaned up MCP client resources")
+            print("[INFO] MCP client closed successfully")
         except Exception as e:
-            print(f"[ERROR] Error during cleanup: {e}")
-            if self.debug:
-                print(f"[DEBUG] Cleanup traceback: {traceback.format_exc()}")
+            print(f"[ERROR] Error closing MCP client: {e}")

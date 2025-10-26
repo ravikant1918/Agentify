@@ -1,7 +1,41 @@
 version: '3.8'
 
 services:
-  fast-agent-poc:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agentify}
+      POSTGRES_USER: ${POSTGRES_USER:-agentify_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agentify_pass}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-agentify_user} -d ${POSTGRES_DB:-agentify}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Agentify Application
+  agentify:
     build:
       context: .
       dockerfile: Dockerfile
@@ -11,7 +45,7 @@ services:
         HTTPS_PROXY: ${HTTPS_PROXY:-}
         NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1}
     ports:
-      - "8000:8000"
+      - "8001:8001"
     env_file:
       - .env
     environment:
@@ -22,18 +56,43 @@ services:
       - http_proxy=${HTTP_PROXY:-}
       - https_proxy=${HTTPS_PROXY:-}
       - no_proxy=${NO_PROXY:-localhost,127.0.0.1}
-      - PORT=${PORT:-8000}
+      - PORT=${PORT:-8001}
+      
+      # Database configuration
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-agentify_user}:${POSTGRES_PASSWORD:-agentify_pass}@postgres:5432/${POSTGRES_DB:-agentify}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-agentify}
+      - POSTGRES_USER=${POSTGRES_USER:-agentify_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-agentify_pass}
+      
+      # Redis configuration
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Authentication configuration
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-your-super-secret-jwt-key-change-in-production}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
       
       # Application environment variables
-      - MODEL=${MODEL:-gpt-35-turbo}
-      - AZURE_API_VERSION=${AZURE_API_VERSION:-2023-05-15}
+      - MODEL=${MODEL:-gpt-4}
+      - AZURE_API_VERSION=${AZURE_API_VERSION:-2024-12-01-preview}
       - AZURE_ENDPOINT=${AZURE_ENDPOINT:-https://your-endpoint.openai.azure.com/}
       - LLM_API_KEY=${LLM_API_KEY:-your-azure-api-key}
+      - LLM_PROVIDER=${LLM_PROVIDER:-azure}
       - BASE_URL=${BASE_URL}
       - MCP_URL=${MCP_URL}
-      - REDIS_URL=${REDIS_URL:-redis://localhost:6379/0}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_MODELS=${GOOGLE_MODELS:-gemini-2.0-flash-exp}
     volumes:
-      - ./templates:/app/templates
-      - ./static:/app/static
+      - ./frontend/dist:/app/frontend/dist
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
-    network_mode: host  # Use host networking to access local Redis
+
+volumes:
+  postgres_data:
+  redis_data:
